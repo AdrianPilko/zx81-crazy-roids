@@ -338,8 +338,8 @@ initVariables
     ld (currentPlayerLocation), hl
     call resetJollyRogerPos
 	
-	ld hl, sharkBonusSprite
-	ld (sharkSpritesPointer), hl
+	ld hl, UFOBonusSprite
+	ld (UFOBonusSpritePointer), hl
 	
 	
 
@@ -627,6 +627,17 @@ skipMissileDraw
 
     jp gameLoop
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;; END OF MAIN GAME LOOP ;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; BELOW ARE SUBROUTINES CALLED FROM GAME LOOP  ;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pirateFire
     ret
@@ -939,7 +950,7 @@ continueWithPirateLoop
 
    ld a, (evenOddLoopFlag)
    cp 1
-   ;jr z, updatePirateSpriteCycle
+   jr z, updatePirateSpriteCycle
 
    ;ld a,1
    ;ld de, 760
@@ -1398,16 +1409,16 @@ drawSharkBonus
    
    jr z, resetSharkSpriteSprite
    ld (sharkSpriteCycleCount), a
-   ld hl, (sharkSpritesPointer)
+   ld hl, (UFOBonusSpritePointer)
    ld de, 32
    add hl, de
-   ld (sharkSpritesPointer), hl
+   ld (UFOBonusSpritePointer), hl
    jr continueDrawShark
 resetSharkSpriteSprite
    xor a
    ld (sharkSpriteCycleCount), a
-   ld hl, sharkBonusSprite
-   ld (sharkSpritesPointer), hl
+   ld hl, UFOBonusSprite
+   ld (UFOBonusSpritePointer), hl
 continueDrawShark
     xor a
     ld d, a
@@ -1439,7 +1450,7 @@ continueDrawShark
     ld de, 33
     add hl, de
     ex de, hl
-    ld hl, (sharkSpritesPointer)
+    ld hl, (UFOBonusSpritePointer)
     ld c, 8
     ld b, 4
     call drawSprite
@@ -1773,15 +1784,21 @@ missileData
     DB $00, $85, $05, $00
 	DB $00, $00, $00, $00
 
-sharkBonusSprite    ; 96 bytes , 8x4 characters times 3 frames
-	DB $00, $00, $87, $80, $00, $00, $00, $87, $83, $07, $80, $80
-	DB $80, $83, $83, $01, $80, $80, $80, $80, $80, $80, $03, $04
-	DB $00, $03, $00, $02, $04, $00, $00, $02, $00, $00, $87, $80
-	DB $00, $00, $00, $87, $83, $07, $80, $80, $80, $83, $83, $07
-	DB $02, $80, $80, $80, $80, $80, $03, $82, $03, $03, $00, $84
-	DB $00, $00, $00, $02, $00, $00, $87, $80, $00, $00, $00, $83
-	DB $83, $80, $80, $80, $80, $83, $83, $05, $81, $80, $80, $80
-	DB $80, $80, $03, $05, $00, $03, $00, $86, $00, $00, $00, $03
+UFOBonusSprite    ; 96 bytes , 8x4 characters times 3 frames
+	DB $00, $83, $83, $83, $83, $83, $83, $00
+    DB $06, $84, $07, $84, $07, $84, $07, $86
+    DB $86, $81, $82, $81, $82, $81, $82, $06
+	DB $00, $03, $03, $03, $03, $03, $03, $00
+
+	DB $00, $83, $83, $83, $83, $83, $83, $00
+    DB $81, $03, $80, $03, $80, $03, $80, $86
+    DB $84, $83, $80, $83, $80, $83, $80, $06
+	DB $00, $03, $03, $03, $03, $03, $03, $00
+
+	DB $00, $83, $83, $83, $83, $83, $83, $00
+    DB $81, $07, $84, $07, $84, $07, $84, $82
+    DB $84, $82, $81, $82, $81, $82, $81, $07
+	DB $00, $03, $03, $03, $03, $03, $03, $00
 
 
 explsion4x4     ;4x4 and 5 frames total of animation (80bytes)
@@ -1940,7 +1957,7 @@ sharkValid
     DB 0
 sharkBonusCountUp
     DB 0
-sharkSpritesPointer
+UFOBonusSpritePointer
     DW 0
 sharkSpriteCycleCount
     DB 0
