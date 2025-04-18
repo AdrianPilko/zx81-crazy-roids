@@ -582,7 +582,7 @@ doFireMissile      ; triggered when jump key pressed just sets the
 
     ;; in power up mode we'll fire from nose and wing tips :) (note: not yet implemented)
     ld hl, (currentPlayerLocation)
-    ld de, -31
+    ld de, -33
     add hl, de
     ld (currentMissilePosition), hl
     ;;; setup the missile "Time To Live"  (like ethernet TTL right :)
@@ -939,7 +939,7 @@ continueWithPirateLoop
 
    ld a, (evenOddLoopFlag)
    cp 1
-   jr z, updatePirateSpriteCycle
+   ;jr z, updatePirateSpriteCycle
 
    ;ld a,1
    ;ld de, 760
@@ -1766,9 +1766,13 @@ Variables
 ;     DB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 ;	 DB $00, $00, $00, $00
 missileData
-    ;; small cannon ball
-    DB $00, $00, $00, $00, $00, $81, $86, $00, $00, $84, $07, $00
+    ;; small cannon ball, notice it deliberately has white space round to enable 
+    ;; clearing it's own path without extra drawing a "blank"
+    DB $00, $00, $00, $00 
+    DB $00, $85, $05, $00 
+    DB $00, $85, $05, $00
 	DB $00, $00, $00, $00
+
 sharkBonusSprite    ; 96 bytes , 8x4 characters times 3 frames
 	DB $00, $00, $87, $80, $00, $00, $00, $87, $83, $07, $80, $80
 	DB $80, $83, $83, $01, $80, $80, $80, $80, $80, $80, $03, $04
@@ -1818,7 +1822,7 @@ pirate3sprites4x4       ; these are 16 bytes each 4 by 4)
 	DB $00, $07, $84, $00, $02, $01, $85, $00, $00, $85, $05, $87
 	DB $06, $80, $80, $01, $01, $07, $84, $00, $87, $05, $85, $00
 
-; used to clear current location before move
+; the players space ship graphic, 4 by 4 blocks
 playerSpriteData
     DB   00,$85,$05, 00
     DB   00,$06,$86, 00
@@ -1995,7 +1999,7 @@ TopLineText
     DB _S,_C,_O,_R,_E,_CL,__,__,__,__,__,__,__,_L,_E,_V,_E,_L,_CL,__,__,__,_L,_I,_V,_E,_S,_CL,__,__,__,$ff
 
 title_screen_txt
-	DB	_Z,_X,_8,_1,__,_C,_R,_A,_Z,_Y,__,_D,_R,_O,_I,_D,_S,$ff
+	DB	_Z,_X,_8,_1,__,_C,_R,_A,_Z,_Y,$16,_R,_O,_I,_D,_S,$ff
 keys_screen_txt_1
 	DB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,_P,__,_R,_I,_G,_H,_T,$ff
 keys_screen_txt_2
@@ -2011,7 +2015,7 @@ last_Score_txt
 high_Score_txt
 	DB 21,21,21,21,_H,_I,_G,_H,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff
 credits_and_version_1
-	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
+	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_5,$ff
 credits_and_version_2
 	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_1,$ff
 credits_and_version_3
