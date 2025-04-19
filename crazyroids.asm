@@ -23,18 +23,7 @@
 ;;; https://youtube.com/@byteforever7829
 
 ;;; Known bug(s)
-;;; 1) if you are shooting then die and game over the next game you sometimes immediately lose a life
-
-;;; Potential Improvements (+extra features)
-;;; 1) If the pirates second row reaches the players mid ship then the player loses
-;;;    a life even if that last row was all shot, improve but making it possible to
-;;;    only die if the bottom row is shot and the top row pirates moved down to players ship
-;;; 2) When both rows of pirates are shot on left or right edges then the whole remaining
-;;;    "block" of pirates should be able to move to the screen limits not just carry on as if
-;;;    the edge pirates were still extant.
-;;; 3) pirates should be able to fire back down
-;;; 4) different bonus to get rather than just the shark. maybe giant squid
-
+;;; 
 ;some #defines for compatibility with other assemblers
 ;pasmo only accepts DEFINE
 CLS EQU $0A2A
@@ -220,7 +209,7 @@ intro_title
     ld (last_score_mem_tens),a
     ld (last_score_mem_hund),a
     ld (sharkPosX), a
-    ld (sharkValid), a
+    ld (UFOValid), a
     ld (sharkBonusCountUp), a
 
     ;ld a, $00
@@ -370,12 +359,12 @@ initVariables
     ld hl, Display+1
     ld de, PIRATE_START_POS
     add hl, de
-    ld (pirateTopLeftPosition), hl
+    ld (asteroidTopLeftPosition), hl
     xor a
     ld (pirateSpriteCycleCount), a
     ;ld hl, pirate3sprites
-    ld hl, pirate3sprites4x4
-    ld (pirateSpritesPointer), hl
+    ld hl, asteroidSpriteData4x4
+    ld (asteroidSpritePointer), hl
     ld hl, 1
     ld (pirateDirUpdate), hl
     ld a, $ff   ; every pirate is alive
@@ -383,6 +372,14 @@ initVariables
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
     ld (pirateValidBitMap), a
+
+;;Initially we'll just have one asteroid and move it down
+;; evnetually there'll be mulitple asteroids (maybe upto 8 and start at random times and x pos)
+    ld hl, Display+1
+    ld de, 175
+    add hl, de
+    ld (asteroidTopLeftPosition), hl
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -402,6 +399,11 @@ waitForTVSync
     ld (evenOddLoopCount), a
     xor a
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
+
+    ld a,(evenOddLoopCount)
+    ld de, 760
+    call print_number8bits
+
     jr continueWithGameLoop
 
 resetEvenOddAndSetFlag
@@ -409,6 +411,10 @@ resetEvenOddAndSetFlag
     ld (evenOddLoopCount), a
     ld a, 1
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
+
+    ld a,(evenOddLoopFlag)
+    ld de, 764
+    call print_number8bits
 
 continueWithGameLoop
 
@@ -434,18 +440,21 @@ continueWithGameLoop
     cp 0
     jr z, skipSharkInGameLoop
 
-    ld a, (sharkValid)
+    ld a, (evenOddLoopFlag)
+    cp 1
+    call z, updateAsteroidsPositions
+
+
+    ld a, (UFOValid)
     cp 1
     call z, drawSharkBonus
 skipSharkInGameLoop
     call setRandomPirateToShoot   ; this sets nextPirateToFireIndex
 
-    ld a, (bossLevelFlag)
-    cp 0
-    call z, drawMainInvaderGrid
-
-    call pirateFire   ; this will use and nextPirateToFireIndex also check pirateFiringFlag
-
+    ;ld a, (bossLevelFlag)
+    ;cp 0
+    ;call z, drawAsteroid
+    call drawAsteroid
 
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
@@ -639,7 +648,13 @@ skipMissileDraw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pirateFire
+updateAsteroidsPositions
+    ld hl, (asteroidTopLeftPosition)
+    ld de, 33
+    add hl, de
+    ld (asteroidTopLeftPosition), hl
+    ;;; TODO check this isn't off the bottom
+    ;;; TDOO loop for multiple asteroids
     ret
 
 
@@ -685,19 +700,19 @@ triggerShark
     ld a, 24
     ld (sharkPosX), a
     ld a, 1
-    ld (sharkValid), a
+    ld (UFOValid), a
 
 notriggerShark
     ld hl, -1
     ld (pirateDirUpdate), hl
     ;; also shove down one row
     ;before we do that we need to blank the line where the pirates "heads" were
-    ld de, (pirateTopLeftPosition)
+    ld de, (asteroidTopLeftPosition)
     ld hl, blankSprite
     ld c, 16
     ld b, 1
     call drawSprite
-    ld hl, (pirateTopLeftPosition)
+    ld hl, (asteroidTopLeftPosition)
     ld de, 165
     add hl, de
     ex de, hl
@@ -706,10 +721,10 @@ notriggerShark
     ld b, 1
     call drawSprite
     ;; finally move one row down
-    ld hl, (pirateTopLeftPosition)
+    ld hl, (asteroidTopLeftPosition)
     ld de, 33
     add hl, de
-    ld (pirateTopLeftPosition),hl
+    ld (asteroidTopLeftPosition),hl
 
     jr endOfUpdatePirateXPos
 
@@ -718,13 +733,13 @@ reversePirateDirToPos
     ld (pirateDirUpdate), hl
     ;; also shove down one row
     ;before we do that we need to blank the line where the pirates "heads" were
-    ld de, (pirateTopLeftPosition)
+    ld de, (asteroidTopLeftPosition)
     ld hl, blankSprite
     ld c, 16
     ld b, 1
     call drawSprite
     ;; and blank the middle bit between the rows of pirates
-    ld hl, (pirateTopLeftPosition)
+    ld hl, (asteroidTopLeftPosition)
     ld de, 165
     add hl, de
     ex de, hl
@@ -734,10 +749,10 @@ reversePirateDirToPos
     call drawSprite
 
     ;; finally move one row down
-    ld hl, (pirateTopLeftPosition)
+    ld hl, (asteroidTopLeftPosition)
     ld de, 33
     add hl, de
-    ld (pirateTopLeftPosition),hl
+    ld (asteroidTopLeftPosition),hl
     jr endOfUpdatePirateXPos
 
 endOfUpdatePirateXPos
@@ -746,11 +761,11 @@ endOfUpdatePirateXPos
 ;    ld de, 760
 ;    call print_number8bits
 ;ENDIF
-    ld hl, (pirateTopLeftPosition)
+    ld hl, (asteroidTopLeftPosition)
     ;ld (previousPirateLocation), hl
     ld de, (pirateDirUpdate)
     add hl, de
-    ld (pirateTopLeftPosition), hl
+    ld (asteroidTopLeftPosition), hl
 
     ld hl, (pirateDirUpdate)
     ld a, (pirateXPos)
@@ -826,171 +841,13 @@ endOfUpdateJollyRoger
 
     ret
 
-blankToLAndROfInvader
-    ld hl, (pirateTopLeftPosition)
-    ld de, -1
-    add hl, de
-    ex de, hl
-    ld hl, enemySprite5by8Blank
-    ld c, 1
-    ld b, 9
-    call drawSprite
-    ld hl, (pirateTopLeftPosition)
-    ld de, 16
-    add hl, de
-    ex de, hl
-    ld hl, enemySprite5by8Blank
-    ld c, 1
-    ld b, 9
-    call drawSprite
-   ret
 
-drawMainInvaderGrid
-    ;; first check if any piratres are left
-    ld b, $ff     ; set a (and then next line b to all ones)
-    ld a, (pirateValidBitMap)
-    and b
-    jr z, setWaveComplete
-    jr checkIfPlayerHitPirates
-setWaveComplete
-    ld a, 1
-    ld (goNextLevelFlag), a
-    ret
-
-checkIfPlayerHitPirates
-    ;; second check if the bottom pirate has reached the lowest line
-    ;; if so restart the level and decrease score by 1
-
-    ;; TODO first version will only check the top left most has reach low point
-    ;; need logic to check if any bottom row pirates left if so let it go lower
-    ld hl, (pirateTopLeftPosition)
-    ld (pirateRowLeftPositionTemp), hl
-    ld hl, Display+1
-    ld de, $01d0   ;1af $018e is the offset to the lowest row the pirates should be able to get
-    add hl, de
-    ex de, hl
-    ld hl, (pirateRowLeftPositionTemp) ;; reload hl with pirateRowLeftPositionTemp
-    ld a, h
-    cp d
-    jr z, checkNextPirateLowest
-    jr continueDrawPirates
-checkNextPirateLowest
-    ld a, l
-    cp e
-    jr z, pirateReachedLowest
-    jr continueDrawPirates
-pirateReachedLowest
-    ld a, 1
-    ld (restartLevelFlag), a
-    jp updatePirateSpriteCycle
-
-continueDrawPirates
-;; we have an area of memory which will represent flags for if each of the grid of 5 rows of
-;; 5 columnsn invaders is valid (ie not been killed). This code will loop round that and
-;; display an invader sprite if required
-    call blankToLAndROfInvader
-    ld b, 2
-    ld hl, (pirateTopLeftPosition)
-    ld (pirateRowLeftPositionTemp), hl
-    ld a, $80    ; setup a moving bit mask which we'll use to determine if the pirate is shot or not
-    ld (pirateValidBitMapMaskTemp), a
-
-
-pirateRowDrawLoop
-
-   push bc
-
-        ld b, 4
-pirateColDrawLoop
-            push bc
-                ;; put some logic here to determine if the pirate was shot or not
-
-                ld a, (pirateValidBitMapMaskTemp)
-                ld b, a
-                ld a, (pirateValidBitMap)
-                and b
-                push af
-                rr b
-                ld a, b
-                ld (pirateValidBitMapMaskTemp),a
-                pop af
-                jr z, skipDrawThisPirate
-
-
-                ld de, (pirateRowLeftPositionTemp)
-                ld hl, (pirateSpritesPointer)
-                ld c, 4
-                ;ld b, 8
-                ld b, 4
-                call drawSprite
-                jr continueWithPirateLoop
-skipDrawThisPirate
-                ;; but draw a blank
-                ld de, (pirateRowLeftPositionTemp)
-                ld hl, blankSprite
-                ld c, 4
-                ;ld b, 8
-                ld b, 4
-                call drawSprite
-continueWithPirateLoop
-                ld hl, 4
-                ld de, (pirateRowLeftPositionTemp)
-                add hl, de
-                ld (pirateRowLeftPositionTemp), hl
-            pop bc
-            djnz pirateColDrawLoop
-
-            ld hl, (pirateTopLeftPosition)
-            ld de, 165
-            add hl, de
-            ld (pirateRowLeftPositionTemp), hl
-
-   pop bc
-   djnz pirateRowDrawLoop
-
-   ld a, (evenOddLoopFlag)
-   cp 1
-   jr z, updatePirateSpriteCycle
-
-   ;ld a,1
-   ;ld de, 760
-   ;call print_number8bits
-
-   jr endOfPirateSpriteUpdate
-   ; update the sprite to draw from the 3 cycles
-updatePirateSpriteCycle
-
-   ;ld a,2
-   ;ld de, 760
-   ;call print_number8bits
-
-   ; update X position and reverse direction if reached end limits
-   call updatePirateXPos
-
-   ld a, (pirateSpriteCycleCount)
-   inc a
-   cp 2
-   jr z, resetPirateSprite
-   ld (pirateSpriteCycleCount), a
-   ld hl, (pirateSpritesPointer)
-   ld de, 32
-   add hl, de
-   ld (pirateSpritesPointer), hl
-   ld a, (pirateSpriteCycleCount)     ;; currentPlayerLocation is already offset to
-IF DEFINED DEBUG_PRINT_PIRATE_CYCLE
-   ld de, 1
-   call print_number8bits
-ENDIF
-   jr endOfPirateSpriteUpdate
-
-resetPirateSprite
-   xor a
-   ld (pirateSpriteCycleCount), a
-   ;ld hl, pirate3sprites
-   ld hl, pirate3sprites4x4
-   ld (pirateSpritesPointer), hl
-
-endOfPirateSpriteUpdate
+drawAsteroid
+   ld de, (asteroidTopLeftPosition)
+   ld hl, (asteroidSpritePointer)
+   ld b, 4
+   ld c, 4 
+   call drawSprite
    ret
 
 ;; check if missile hit pirates
@@ -998,7 +855,7 @@ endOfPirateSpriteUpdate
 
 checkIfMissileHit
 ;;;; check if missile hit the shark, if the shark is valid
-    ld a, (sharkValid)
+    ld a, (UFOValid)
     cp 0
     jr z, skipCheckSharkHit
     ld de, (currentMissilePosition)
@@ -1013,7 +870,7 @@ checkIfMissileHit
 
     ; shark hit
     xor a
-    ld (sharkValid), a
+    ld (UFOValid), a
     ld b, 10
 increaseScoreSharkHitLoop
     push bc
@@ -1077,7 +934,7 @@ noHitMissileBoss
     ret
 
 skipCheckBossHit
-    ld hl, (pirateTopLeftPosition)
+    ld hl, (asteroidTopLeftPosition)
 
     ld (pirateRowLeftPositionTemp), hl
     ;becasue the whole loop is setup to count down, and because we want to check the
@@ -1219,7 +1076,7 @@ executeRestartLevel
 
     xor a
     ld (restartLevelFlag), a
-    ld (sharkValid), a
+    ld (UFOValid), a
     ld (sharkBonusCountUp), a
 
     call CLS
@@ -1310,11 +1167,11 @@ skipGameOverFlagSet
     ld hl, Display+1
     ld de, PIRATE_START_POS
     add hl, de
-    ld (pirateTopLeftPosition), hl
+    ld (asteroidTopLeftPosition), hl
     xor a
     ld (pirateSpriteCycleCount), a
-    ld hl, pirate3sprites4x4
-    ld (pirateSpritesPointer), hl
+    ld hl, asteroidSpriteData4x4
+    ld (asteroidSpritePointer), hl
     ld hl, 1
     ld (pirateDirUpdate), hl
     ld a, $ff   ; every pirate is alive
@@ -1376,11 +1233,11 @@ continueGampLoop
     ld hl, Display+1
     ld de, PIRATE_START_POS
     add hl, de
-    ld (pirateTopLeftPosition), hl
+    ld (asteroidTopLeftPosition), hl
     xor a
     ld (pirateSpriteCycleCount), a
-    ld hl, playerSpriteData
-    ld (pirateSpritesPointer), hl
+    ld hl, asteroidSpriteData4x4
+    ld (asteroidSpritePointer), hl
     ld hl, 1
     ld (pirateDirUpdate), hl
     ld a, $ff   ; every pirate is alive
@@ -1391,7 +1248,7 @@ continueGampLoop
 
     xor a
     ld (goNextLevelFlag), a
-    ld (sharkValid), a
+    ld (UFOValid), a
     ld (sharkBonusCountUp), a
     ret
 
@@ -1457,7 +1314,7 @@ continueDrawShark
     jr endDrawSharkBonus
 noDrawSharkAndSetInvalid
     xor a
-    ld (sharkValid), a
+    ld (UFOValid), a
     ld a, 1
     ld (sharkPosX), a
     xor a
@@ -1841,11 +1698,20 @@ playerHitSprite        ; 16x8 "pixels" 8x4 characters (bytes) times 4 frames ani
     DB $00, $00, $06, $82, $07, $04, $00, $00, $00, $80, $00, $01
 	DB $01, $85, $05, $00
 
-pirate3sprites4x4       ; these are 16 bytes each 4 by 4)
-	DB $05, $85, $05, $00, $02, $80, $80, $86, $00, $07, $84, $02
-	DB $87, $05, $85, $00, $04, $85, $05, $00, $02, $80, $80, $84
-	DB $00, $07, $84, $00, $02, $01, $85, $00, $00, $85, $05, $87
-	DB $06, $80, $80, $01, $01, $07, $84, $00, $87, $05, $85, $00
+asteroidSpriteData4x4       ; these are 16 bytes each 4 by 4)
+  DB $87,$86,$80,$04
+   DB $82,$81,$07,$84
+   DB $05,$84,$04,$07
+   DB $02,$81,$07,$00
+   DB $87,$84,$07,$04
+   DB $82,$02,$07,$84
+   DB $82,$85,$07,$07
+   DB $02,$80,$07,$00
+   DB $87,$80,$07,$04
+   DB $80,$07,$06,$84
+   DB $80,$85,$05,$07
+   DB $02,$82,$07,$00
+
 
 ; the players space ship graphic, 4 by 4 blocks
 playerSpriteData
@@ -1961,7 +1827,7 @@ sharkPosX
     DB 0
 sharkAbsoluteScreenPos
     DW 0
-sharkValid
+UFOValid
     DB 0
 sharkBonusCountUp
     DB 0
@@ -1973,7 +1839,7 @@ deadPlayerSpritePointer
     DW 0
 playerSpritePointer
     DW 0
-pirateTopLeftPosition
+asteroidTopLeftPosition
     DW 0
 pirateRowLeftPositionTemp
     DW 0
@@ -1983,7 +1849,7 @@ bitsetMaskPirateTemp
     DB 0
 pirateSpriteCycleCount
     DB 0
-pirateSpritesPointer
+asteroidSpritePointer
     DW 0
 pirateDirUpdate
     DW 1
