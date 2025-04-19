@@ -361,8 +361,7 @@ initVariables
     add hl, de
     ld (asteroidTopLeftPosition), hl
     xor a
-    ld (pirateSpriteCycleCount), a
-    ;ld hl, pirate3sprites
+    ld (asteroidSpriteCycleCount), a
     ld hl, asteroidSpriteData4x4
     ld (asteroidSpritePointer), hl
     ld hl, 1
@@ -848,7 +847,23 @@ drawAsteroid
    ld b, 4
    ld c, 4 
    call drawSprite
+
+   ld a, (asteroidSpriteCycleCount)
+   inc a
+   cp 2
+   jr z, resetAsteroidSprite
+   ld (asteroidSpriteCycleCount), a
+   ld hl, (asteroidSpritePointer)
+   ld de, 32
+   add hl, de
+   ld (asteroidSpritePointer), hl
    ret
+resetAsteroidSprite
+   xor a
+   ld (asteroidSpriteCycleCount), a
+   ld hl, asteroidSpriteData4x4
+   ld (asteroidSpritePointer), hl
+   ret   
 
 ;; check if missile hit pirates
 
@@ -1169,7 +1184,7 @@ skipGameOverFlagSet
     add hl, de
     ld (asteroidTopLeftPosition), hl
     xor a
-    ld (pirateSpriteCycleCount), a
+    ld (asteroidSpriteCycleCount), a
     ld hl, asteroidSpriteData4x4
     ld (asteroidSpritePointer), hl
     ld hl, 1
@@ -1235,7 +1250,7 @@ continueGampLoop
     add hl, de
     ld (asteroidTopLeftPosition), hl
     xor a
-    ld (pirateSpriteCycleCount), a
+    ld (asteroidSpriteCycleCount), a
     ld hl, asteroidSpriteData4x4
     ld (asteroidSpritePointer), hl
     ld hl, 1
@@ -1847,7 +1862,7 @@ pirateValidBitMapMaskTemp
     DB 0
 bitsetMaskPirateTemp
     DB 0
-pirateSpriteCycleCount
+asteroidSpriteCycleCount
     DB 0
 asteroidSpritePointer
     DW 0
