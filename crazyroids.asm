@@ -210,7 +210,7 @@ intro_title
     ld (last_score_mem_hund),a
     ld (sharkPosX), a
     ld (UFOValid), a
-    ld (sharkBonusCountUp), a
+    ld (UFOBonusCountUp), a
 
     ;ld a, $00
     xor a
@@ -711,15 +711,15 @@ noMissileUpdate
 ;    jr endOfUpdatePirateXPos
 
 ;reversePirateDirToNeg
-;    ld a, (sharkBonusCountUp)
+;    ld a, (UFOBonusCountUp)
 ;    inc a
-;    ld (sharkBonusCountUp), a
+;    ld (UFOBonusCountUp), a
 ;    cp 2
 ;    jr z, triggerShark
 ;    jr notriggerShark
 triggerShark
     xor a
-    ld (sharkBonusCountUp), a
+    ld (UFOBonusCountUp), a
     ld a, 24
     ld (sharkPosX), a
     ld a, 1
@@ -865,13 +865,19 @@ endOfUpdateJollyRoger
     ret
 
 checkIfPlayerHit
+    ld a, $ff
+    ld b, a
+    ld a, (asteroidValidBitMap)
+    cp b
+    jr nz, skipPlayerHit    
+
     ld hl, (currentPlayerLocation)
     ld de, 33
     sbc hl, de
     ld de, (asteroidTopLeftPosition)
-    
     sbc hl, de
     call z, executeRestartLevel
+skipPlayerHit
     ret
 
 
@@ -1133,11 +1139,10 @@ endLoopLabelPriateCheck
 
 
 executeRestartLevel
-
     xor a
     ld (restartLevelFlag), a
     ld (UFOValid), a
-    ld (sharkBonusCountUp), a
+    ld (UFOBonusCountUp), a
 
     call CLS
     ; draw top line where lives and score go
@@ -1151,13 +1156,13 @@ executeRestartLevel
     ;; drew player death animation
     ld hl, playerHitSprite
     ld (deadPlayerSpritePointer), hl
-    ld b,5
+    ld b,6
 playerDeathLoop
     push bc
         ld de, (currentPlayerLocation)
         ld hl, (deadPlayerSpritePointer)
         push hl
-            ld c, 8
+            ld c, 4
             ld b, 4
             call drawSprite
         pop hl
@@ -1234,11 +1239,11 @@ skipGameOverFlagSet
     ld (asteroidSpritePointer), hl
     ld hl, 1
     ld (pirateDirUpdate), hl
-    ;;ld a, $ff   ; every pirate is alive
+    ;ld a, $ff   ; every pirate is alive
     ;ld a, $01   ; for test only bottom right pirate is alive
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
-    ;;ld (asteroidValidBitMap), a
+    ;ld (asteroidValidBitMap), a
     ret
 
 
@@ -1309,7 +1314,7 @@ continueGampLoop
     xor a
     ld (goNextLevelFlag), a
     ld (UFOValid), a
-    ld (sharkBonusCountUp), a
+    ld (UFOBonusCountUp), a
     ret
 
 checkForSharkHit
@@ -1742,20 +1747,31 @@ jollyRoger
      DB	$00, $00, $83, $01
 
 playerHitSprite        ; 16x8 "pixels" 8x4 characters (bytes) times 4 frames animation
-    DB $04, $04, $83, $02, $87, $02, $00, $02, $04, $00, $87, $00
-    DB $00, $01, $02, $00, $87, $87, $02, $87, $05, $06, $81, $86
-    DB $00, $02, $81, $81, $81, $81, $82, $01, $01, $01, $04, $02
-    DB $00, $00, $00, $87, $04, $87, $00, $00, $00, $01, $87, $00
-    DB $87, $87, $00, $00, $00, $00, $00, $00, $00, $00, $06, $00
-    DB $00, $01, $00, $87, $00, $01, $00, $01, $00, $87, $00, $87
-    DB $00, $00, $00, $00, $00, $00, $00, $00, $04, $00, $00, $00
-    DB $00, $00, $00, $02, $00, $00, $00, $00, $00, $00, $00, $00
-    DB $07, $84, $85, $03, $04, $07, $86, $85, $05, $85, $85, $00
-    DB $05, $05, $85, $85, $07, $84, $85, $03, $04, $07, $86, $02
-    DB $01, $02, $02, $00, $01, $01, $02, $02, $00, $80, $00, $00
-    DB $00, $85, $05, $00, $00, $00, $85, $84, $84, $00, $00, $00
-    DB $00, $00, $06, $82, $07, $04, $00, $00, $00, $80, $00, $01
-	DB $01, $85, $05, $00
+   DB $87,$02,$86,$00
+   DB $87,$86,$06,$04
+   DB $82,$86,$07,$80
+   DB $00,$02,$01,$01
+   DB $87,$02,$86,$00
+   DB $87,$86,$06,$04
+   DB $82,$86,$07,$80
+   DB $00,$02,$01,$01
+   DB $87,$00,$01,$04
+   DB $87,$86,$00,$05
+   DB $86,$01,$06,$81
+   DB $04,$00,$01,$05
+   DB $87,$00,$01,$04
+   DB $87,$86,$00,$05
+   DB $86,$01,$06,$81
+   DB $04,$00,$01,$05
+   DB $86,$00,$01,$87
+   DB $87,$00,$00,$01
+   DB $00,$04,$00,$02
+   DB $04,$00,$06,$87
+   DB $86,$00,$01,$87
+   DB $87,$00,$00,$01
+   DB $00,$04,$00,$02
+   DB $04,$00,$06,$87
+
 
 asteroidSpriteData4x4       ; these are 16 bytes each 4 by 4)
   DB $87,$86,$80,$04
@@ -1888,7 +1904,7 @@ sharkAbsoluteScreenPos
     DW 0
 UFOValid
     DB 0
-sharkBonusCountUp
+UFOBonusCountUp
     DB 0
 UFOBonusSpritePointer
     DW 0
