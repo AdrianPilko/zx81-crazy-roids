@@ -625,6 +625,7 @@ updateRestOfScreen
     call updateMissilePosition
 skipMissileDraw
 
+    call checkIfPlayerHit
     jp gameLoop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -863,6 +864,16 @@ endOfUpdateJollyRoger
 
     ret
 
+checkIfPlayerHit
+    ld hl, (currentPlayerLocation)
+    ld de, 33
+    sbc hl, de
+    ld de, (asteroidTopLeftPosition)
+    
+    sbc hl, de
+    call z, executeRestartLevel
+    ret
+
 
 drawAsteroid
 ;;; initially just check if first asteroid is valid
@@ -897,7 +908,7 @@ resetAsteroidSprite
 skipDrawAsteroid
    ret   
 
-;; check if missile hit pirates
+;; check if missile hit piratasteroids
 
 
 checkIfMissileHit
