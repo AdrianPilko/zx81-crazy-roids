@@ -370,7 +370,7 @@ initVariables
     ;ld a, $01   ; for test only bottom right pirate is alive
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
-    ld (pirateValidBitMap), a
+    ld (asteroidValidBitMap), a
 
 ;;Initially we'll just have one asteroid and move it down
 ;; evnetually there'll be mulitple asteroids (maybe upto 8 and start at random times and x pos)
@@ -466,14 +466,14 @@ skipSharkInGameLoop
     cp 0
     jp z, noJollyRogerDraw
     ld hl, blankSprite
-    ld de, (previousJollyRogerLocation)
+    ld de, (previousbossSpriteLocation)
     ld c, 8
     ld b, 8
     call drawSprite
 
     call updateJollyRoger
     ld hl, jollyRoger
-    ld de, (jollyRogerLocation)
+    ld de, (bossSpriteLocation)
     ld c, 8
     ld b, 8
     call drawSprite
@@ -786,9 +786,9 @@ reverseDirToNeg
     ld hl, -1
     ld (jollyRogerDirUpdate), hl
     ld de, 33
-    ld hl, (jollyRogerLocation)
+    ld hl, (bossSpriteLocation)
     add hl, de
-    ld (jollyRogerLocation), hl
+    ld (bossSpriteLocation), hl
     ld a, (jollyRogerYPosCountDown)
     dec a
     cp 0
@@ -827,11 +827,11 @@ reverseDirToPos
 
 endOfUpdateJollyRoger
 
-    ld hl, (jollyRogerLocation)
-    ld (previousJollyRogerLocation), hl
+    ld hl, (bossSpriteLocation)
+    ld (previousbossSpriteLocation), hl
     ld de, (jollyRogerDirUpdate)
     add hl, de
-    ld (jollyRogerLocation), hl
+    ld (bossSpriteLocation), hl
 
     ld hl, (jollyRogerDirUpdate)
     ld a, (jollyRogerXPos)
@@ -842,6 +842,15 @@ endOfUpdateJollyRoger
 
 
 drawAsteroid
+;;; initially just check if first asteroid is valid
+    ld a, $01
+    ld a, (asteroidValidBitMapMaskTemp)
+    ld b, a
+    ld a, (asteroidValidBitMap)
+    and b
+    jp nz, skipDrawAsteroid
+    
+
    ld de, (asteroidTopLeftPosition)
    ld hl, (asteroidSpritePointer)
    ld b, 4
@@ -863,25 +872,26 @@ resetAsteroidSprite
    ld (asteroidSpriteCycleCount), a
    ld hl, asteroidSpriteData4x4
    ld (asteroidSpritePointer), hl
+skipDrawAsteroid
    ret   
 
 ;; check if missile hit pirates
 
 
 checkIfMissileHit
-;;;; check if missile hit the shark, if the shark is valid
+;;;; check if missile UFO, if the UFO is valid
     ld a, (UFOValid)
     cp 0
-    jr z, skipCheckSharkHit
+    jr z, skipCheckUFOHit
     ld de, (currentMissilePosition)
     ld hl, (sharkAbsoluteScreenPos)
     sbc hl, de
     ld a, h
     cp 0
-    jp nz, skipCheckSharkHit
+    jp nz, skipCheckUFOHit
     ld a, l
     cp 0
-    jp nz, skipCheckSharkHit
+    jp nz, skipCheckUFOHit
 
     ; shark hit
     xor a
@@ -894,16 +904,14 @@ increaseScoreSharkHitLoop
     djnz increaseScoreSharkHitLoop
 
 
-skipCheckSharkHit
-
-
+skipCheckUFOHit
     ld a, (bossLevelFlag)
     cp 0
     jr z, skipCheckBossHit
 
     ; code for jolly roger hit detect
 
-    ld de, (jollyRogerLocation)
+    ld de, (bossSpriteLocation)
     ld hl, 36
     add hl, de
     ex de, hl
@@ -951,34 +959,34 @@ noHitMissileBoss
 skipCheckBossHit
     ld hl, (asteroidTopLeftPosition)
 
-    ld (pirateRowLeftPositionTemp), hl
+    ld (asteroidRowLeftPositionTemp), hl
     ;becasue the whole loop is setup to count down, and because we want to check the
     ; lower row first we need to move the "Tope left position to be the bottom right
     ld de, 177
     add hl, de
-    ld (pirateRowLeftPositionTemp), hl  ; this now has bottom right pirate
+    ld (asteroidRowLeftPositionTemp), hl  ; this now has bottom right pirate
 
     ; setup a moving bit mask which we'll use to determine if the pirate
     ; is shot or not. this is basically all ones except the top bit is zero,
-    ; this will get rotated round in the loop and used to and with the pirateValidBitMap
+    ; this will get rotated round in the loop and used to and with the asteroidValidBitMap
     ld a, $fe
-    ld (pirateValidBitMapMaskTemp), a
+    ld (asteroidValidBitMapMaskTemp), a
 
     ; this is used to and with the current mask to check if missile collision check is needed
     ld a, $01
-    ld (bitsetMaskPirateTemp), a
+    ld (bitsetMaskAsteroidTemp), a
     ld b, 8
 missileCheckHitLoop
     push bc
         ;; check if we even need to check this pirate, if not valid then skip
-        ld a, (bitsetMaskPirateTemp)
+        ld a, (bitsetMaskAsteroidTemp)
         ld b, a
-        ld a, (pirateValidBitMap)
+        ld a, (asteroidValidBitMap)
         and b
         jr z, noHitMissile
 
         ;; ok so we have checked everything ready for finally seeing if missile hit
-        ld de, (pirateRowLeftPositionTemp)
+        ld de, (asteroidRowLeftPositionTemp)
         ld hl, (currentMissilePosition)
         ; compare upper and lower bytes of hl and de
         ld a, h
@@ -1005,11 +1013,11 @@ checkNextPirateMissileHit2
 MissileHitPirate
         ;; missile/cannon HIT!!!
 
-        ld a, (pirateValidBitMapMaskTemp)
+        ld a, (asteroidValidBitMapMaskTemp)
         ld b, a
-        ld a, (pirateValidBitMap)
+        ld a, (asteroidValidBitMap)
         and b
-        ld (pirateValidBitMap), a
+        ld (asteroidValidBitMap), a
 
         ;also if we have hit then disable the missile now!!
         xor a
@@ -1025,7 +1033,7 @@ MissileHitPirate
 explosionDrawLoop
         push bc
             push hl
-                ld de, (pirateRowLeftPositionTemp)
+                ld de, (asteroidRowLeftPositionTemp)
                 ld c, 4
                 ld b, 4
                 call drawSprite
@@ -1050,23 +1058,23 @@ explosionDelayLoop2
 noHitMissile
         ;; update mask which is the only bit not set we check next
         ;; e.g second pirate is 0x10111111
-        ld a, (pirateValidBitMapMaskTemp)
+        ld a, (asteroidValidBitMapMaskTemp)
         ;rra
         rlc a
-        ld (pirateValidBitMapMaskTemp),a
+        ld (asteroidValidBitMapMaskTemp),a
 
         ;; update the mask which is the bit we're setting set all others z80
         ;; e.g second pirate is 0x01000000
-        ld a, (bitsetMaskPirateTemp)
+        ld a, (bitsetMaskAsteroidTemp)
         ;rra
         rlc a
-        ld (bitsetMaskPirateTemp), a
+        ld (bitsetMaskAsteroidTemp), a
 
         ; now move the position to compare (ie a pirate)
         ld de, -4
-        ld hl, (pirateRowLeftPositionTemp)
+        ld hl, (asteroidRowLeftPositionTemp)
         add hl, de
-        ld (pirateRowLeftPositionTemp), hl
+        ld (asteroidRowLeftPositionTemp), hl
     pop bc
         ld a, b  ; check the loop counter, if it's 3 then move the whole lot down by +33-16
         cp 5
@@ -1074,7 +1082,7 @@ noHitMissile
         ld de, -149
 
         add hl, de
-        ld (pirateRowLeftPositionTemp), hl
+        ld (asteroidRowLeftPositionTemp), hl
 
 endLoopLabelPriateCheck
 
@@ -1193,7 +1201,7 @@ skipGameOverFlagSet
     ;ld a, $01   ; for test only bottom right pirate is alive
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
-    ld (pirateValidBitMap), a
+    ld (asteroidValidBitMap), a
     ret
 
 
@@ -1259,7 +1267,7 @@ continueGampLoop
     ;ld a, $01   ; for test only bottom right pirate is alive
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
-    ld (pirateValidBitMap), a
+    ld (asteroidValidBitMap), a
 
     xor a
     ld (goNextLevelFlag), a
@@ -1352,7 +1360,7 @@ resetJollyRogerPos
     ld hl, Display+1
     ld de, 39
     add hl, de
-    ld (jollyRogerLocation), hl
+    ld (bossSpriteLocation), hl
     ld hl, 1
     ld (jollyRogerDirUpdate),hl
     ld a, 5
@@ -1392,7 +1400,6 @@ drawSprite
     pop bc
     djnz drawSprite
     ret
-
 
 ;;; work in progrerss currently crashes -
 ;; if this could be made to work then the platforms would appear in blank bits of sprite
@@ -1760,7 +1767,7 @@ blockFilled    ;8*10
     DB   8,  8,  8,  8,  8,  8,  8,  8
     DB   8,  8,  8,  8,  8,  8,  8,  8
 
-pirateValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
+asteroidValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
     DB 0
 nextPirateToFireIndex
     DB 0
@@ -1856,11 +1863,11 @@ playerSpritePointer
     DW 0
 asteroidTopLeftPosition
     DW 0
-pirateRowLeftPositionTemp
+asteroidRowLeftPositionTemp
     DW 0
-pirateValidBitMapMaskTemp
+asteroidValidBitMapMaskTemp
     DB 0
-bitsetMaskPirateTemp
+bitsetMaskAsteroidTemp
     DB 0
 asteroidSpriteCycleCount
     DB 0
@@ -1888,11 +1895,11 @@ jollyRogerDirUpdate
     DW 1
 jollyRogerXPos
     DB 0
-jollyRogerLocation
+bossSpriteLocation
     DW 0
 jollyRogerYPosCountDown
     DB 0
-previousJollyRogerLocation
+previousbossSpriteLocation
     DW 0
 gameOverRestartFlag
     DB 0
