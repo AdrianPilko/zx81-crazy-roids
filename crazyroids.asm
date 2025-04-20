@@ -52,8 +52,8 @@ MISSILE_COUNTDOWN_INIT EQU 18
 ;#define PLAYER_START_POS 604
 PLAYER_START_POS EQU 637
 PLAYER_LIVES EQU 3
-;PIRATE_START_POS EQU 366
-PIRATE_START_POS EQU 36
+;ASTEROID_START_POS EQU 366
+ASTEROID_START_POS EQU 45
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 1
 
@@ -357,7 +357,7 @@ initVariables
 
 
     ld hl, Display+1
-    ld de, PIRATE_START_POS
+    ld de, ASTEROID_START_POS
     add hl, de
     ld (asteroidTopLeftPosition), hl
     xor a
@@ -371,14 +371,6 @@ initVariables
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
     ld (asteroidValidBitMap), a
-
-;;Initially we'll just have one asteroid and move it down
-;; evnetually there'll be mulitple asteroids (maybe upto 8 and start at random times and x pos)
-    ld hl, Display+1
-    ld de, 175
-    add hl, de
-    ld (asteroidTopLeftPosition), hl
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -649,11 +641,37 @@ skipMissileDraw
 
 updateAsteroidsPositions
     ld hl, (asteroidTopLeftPosition)
+    ld (asteroidRowLeftPositionTemp), hl
+    ld hl, Display+1
+    ld de, $0321   ;1af $018e is the offset to the lowest row the asteroid should be able to get
+    add hl, de
+    ex de, hl
+    ld hl, (asteroidRowLeftPositionTemp) ;; reload hl with asteroidRowLeftPositionTemp
+    ld a, h
+    cp d
+    jr z, resetUpdateAsteroid
+    jr continueToUpdateAsteroid
+    ;;; TDOO loop for multiple asteroids
+continueToUpdateAsteroid
+    ld de, (asteroidTopLeftPosition)
+    ld hl, blankSprite
+    ld c, 16
+    ld b, 1
+    call drawSprite
+    ld hl, (asteroidTopLeftPosition)
     ld de, 33
     add hl, de
     ld (asteroidTopLeftPosition), hl
-    ;;; TODO check this isn't off the bottom
-    ;;; TDOO loop for multiple asteroids
+    ret
+resetUpdateAsteroid
+    ld hl, Display+1
+    ld de, ASTEROID_START_POS
+    add hl, de
+    ld (asteroidTopLeftPosition), hl
+    ;reset bitmap valid
+    ld a, $ff
+    ld (asteroidValidBitMap), a
+    ld (asteroidValidBitMapMaskTemp), a
     ret
 
 
@@ -677,22 +695,22 @@ noMissileUpdate
       ret
 
 
-updatePirateXPos
-    ld a, (pirateXPos)
-    cp 14
-    jr z, reversePirateDirToNeg
-    cp 3
-    jr z, reversePirateDirToPos
+;updatePirateXPos
+;    ld a, (pirateXPos)
+;    cp 14
+;    jr z, reversePirateDirToNeg
+;    cp 3
+;    jr z, reversePirateDirToPos
 
-    jr endOfUpdatePirateXPos
+;    jr endOfUpdatePirateXPos
 
-reversePirateDirToNeg
-    ld a, (sharkBonusCountUp)
-    inc a
-    ld (sharkBonusCountUp), a
-    cp 2
-    jr z, triggerShark
-    jr notriggerShark
+;reversePirateDirToNeg
+;    ld a, (sharkBonusCountUp)
+;    inc a
+;    ld (sharkBonusCountUp), a
+;    cp 2
+;    jr z, triggerShark
+;    jr notriggerShark
 triggerShark
     xor a
     ld (sharkBonusCountUp), a
@@ -701,75 +719,75 @@ triggerShark
     ld a, 1
     ld (UFOValid), a
 
-notriggerShark
-    ld hl, -1
-    ld (pirateDirUpdate), hl
-    ;; also shove down one row
-    ;before we do that we need to blank the line where the pirates "heads" were
-    ld de, (asteroidTopLeftPosition)
-    ld hl, blankSprite
-    ld c, 16
-    ld b, 1
-    call drawSprite
-    ld hl, (asteroidTopLeftPosition)
-    ld de, 165
-    add hl, de
-    ex de, hl
-    ld hl, blankSprite
-    ld c, 16
-    ld b, 1
-    call drawSprite
+;notriggerShark
+;    ld hl, -1
+;    ld (pirateDirUpdate), hl
+;    ;; also shove down one row
+;    ;before we do that we need to blank the line where the pirates "heads" were
+;    ld de, (asteroidTopLeftPosition)
+;    ld hl, blankSprite
+;    ld c, 16
+;    ld b, 1
+;    call drawSprite
+;    ld hl, (asteroidTopLeftPosition)
+;    ld de, 165
+;    add hl, de
+;    ex de, hl
+;    ld hl, blankSprite
+;    ld c, 16
+;    ld b, 1
+;    call drawSprite
+;    ;; finally move one row down
+;    ld hl, (asteroidTopLeftPosition)
+;    ld de, 33
+;    add hl, de
+;    ld (asteroidTopLeftPosition),hl
+
+;    jr endOfUpdatePirateXPos
+
+;reversePirateDirToPos
+;    ld hl, 1
+;    ld (pirateDirUpdate), hl
+;    ;; also shove down one row
+;    ;before we do that we need to blank the line where the pirates "heads" were
+;    ld de, (asteroidTopLeftPosition)
+;    ld hl, blankSprite
+;    ld c, 16
+;    ld b, 1
+;    call drawSprite
+;    ;; and blank the middle bit between the rows of pirates
+;    ld hl, (asteroidTopLeftPosition)
+;    ld de, 165
+;    add hl, de
+;    ex de, hl
+;    ld hl, blankSprite
+;    ld c, 16
+;    ld b, 1
+;    call drawSprite
+
     ;; finally move one row down
-    ld hl, (asteroidTopLeftPosition)
-    ld de, 33
-    add hl, de
-    ld (asteroidTopLeftPosition),hl
+;    ld hl, (asteroidTopLeftPosition)
+;    ld de, 33
+;    add hl, de
+;    ld (asteroidTopLeftPosition),hl
+ ;   jr endOfUpdatePirateXPos
 
-    jr endOfUpdatePirateXPos
-
-reversePirateDirToPos
-    ld hl, 1
-    ld (pirateDirUpdate), hl
-    ;; also shove down one row
-    ;before we do that we need to blank the line where the pirates "heads" were
-    ld de, (asteroidTopLeftPosition)
-    ld hl, blankSprite
-    ld c, 16
-    ld b, 1
-    call drawSprite
-    ;; and blank the middle bit between the rows of pirates
-    ld hl, (asteroidTopLeftPosition)
-    ld de, 165
-    add hl, de
-    ex de, hl
-    ld hl, blankSprite
-    ld c, 16
-    ld b, 1
-    call drawSprite
-
-    ;; finally move one row down
-    ld hl, (asteroidTopLeftPosition)
-    ld de, 33
-    add hl, de
-    ld (asteroidTopLeftPosition),hl
-    jr endOfUpdatePirateXPos
-
-endOfUpdatePirateXPos
+;endOfUpdatePirateXPos
 ;IF DEFINED DEBUG_PIRATE_DIR
 ;    ld a,(pirateXPos)
 ;    ld de, 760
 ;    call print_number8bits
 ;ENDIF
-    ld hl, (asteroidTopLeftPosition)
-    ;ld (previousPirateLocation), hl
-    ld de, (pirateDirUpdate)
-    add hl, de
-    ld (asteroidTopLeftPosition), hl
+ ;   ld hl, (asteroidTopLeftPosition)
+ ;   ;ld (previousPirateLocation), hl
+ ;   ld de, (pirateDirUpdate)
+ ;   add hl, de
+ ;   ld (asteroidTopLeftPosition), hl
 
-    ld hl, (pirateDirUpdate)
-    ld a, (pirateXPos)
-    add a, l
-    ld (pirateXPos), a
+ ;   ld hl, (pirateDirUpdate)
+ ;   ld a, (pirateXPos)
+ ;   add a, l
+ ;   ld (pirateXPos), a
 
     ret
 
@@ -843,12 +861,12 @@ endOfUpdateJollyRoger
 
 drawAsteroid
 ;;; initially just check if first asteroid is valid
-    ld a, $01
+    ld a, $ff
     ld a, (asteroidValidBitMapMaskTemp)
     ld b, a
     ld a, (asteroidValidBitMap)
     and b
-    jp nz, skipDrawAsteroid
+    jp z, skipDrawAsteroid
     
 
    ld de, (asteroidTopLeftPosition)
@@ -962,9 +980,9 @@ skipCheckBossHit
     ld (asteroidRowLeftPositionTemp), hl
     ;becasue the whole loop is setup to count down, and because we want to check the
     ; lower row first we need to move the "Tope left position to be the bottom right
-    ld de, 177
-    add hl, de
-    ld (asteroidRowLeftPositionTemp), hl  ; this now has bottom right pirate
+;;    ld de, 177
+;;    add hl, de
+    ;ld (asteroidRowLeftPositionTemp), hl  ; this now has bottom right pirate
 
     ; setup a moving bit mask which we'll use to determine if the pirate
     ; is shot or not. this is basically all ones except the top bit is zero,
@@ -975,7 +993,8 @@ skipCheckBossHit
     ; this is used to and with the current mask to check if missile collision check is needed
     ld a, $01
     ld (bitsetMaskAsteroidTemp), a
-    ld b, 8
+;;    ld b, 8
+    ld b, 1
 missileCheckHitLoop
     push bc
         ;; check if we even need to check this pirate, if not valid then skip
@@ -1188,7 +1207,7 @@ skipGameOverFlagSet
 
 
     ld hl, Display+1
-    ld de, PIRATE_START_POS
+    ld de, ASTEROID_START_POS
     add hl, de
     ld (asteroidTopLeftPosition), hl
     xor a
@@ -1254,7 +1273,7 @@ continueGampLoop
 
 
     ld hl, Display+1
-    ld de, PIRATE_START_POS
+    ld de, ASTEROID_START_POS
     add hl, de
     ld (asteroidTopLeftPosition), hl
     xor a
