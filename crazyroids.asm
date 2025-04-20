@@ -391,9 +391,9 @@ waitForTVSync
     xor a
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-    ld a,(evenOddLoopCount)
-    ld de, 760
-    call print_number8bits
+    ;;ld a,(evenOddLoopCount)
+    ;;ld de, 760
+    ;;call print_number8bits
 
     jr continueWithGameLoop
 
@@ -403,9 +403,9 @@ resetEvenOddAndSetFlag
     ld a, 1
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-    ld a,(evenOddLoopFlag)
-    ld de, 764
-    call print_number8bits
+    ;;ld a,(evenOddLoopFlag)
+    ;;ld de, 764
+    ;;call print_number8bits
 
 continueWithGameLoop
 
@@ -640,6 +640,11 @@ skipMissileDraw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 updateAsteroidsPositions
+    ld a, (asteroidValidBitMap)
+    ld de, 760
+    call print_number8bits
+
+
     ld hl, (asteroidTopLeftPosition)
     ld (asteroidRowLeftPositionTemp), hl
     ld hl, Display+1
@@ -861,11 +866,10 @@ endOfUpdateJollyRoger
 
 drawAsteroid
 ;;; initially just check if first asteroid is valid
-    ld a, $ff
-    ld a, (asteroidValidBitMapMaskTemp)
+    ld a, $fe
     ld b, a
     ld a, (asteroidValidBitMap)
-    and b
+    cp b
     jp z, skipDrawAsteroid
     
 
@@ -889,7 +893,7 @@ resetAsteroidSprite
    xor a
    ld (asteroidSpriteCycleCount), a
    ld hl, asteroidSpriteData4x4
-   ld (asteroidSpritePointer), hl
+   ld (asteroidSpritePointer), hl    
 skipDrawAsteroid
    ret   
 
@@ -993,7 +997,7 @@ skipCheckBossHit
     ; this is used to and with the current mask to check if missile collision check is needed
     ld a, $01
     ld (bitsetMaskAsteroidTemp), a
-;;    ld b, 8
+   ; ld b, 8
     ld b, 1
 missileCheckHitLoop
     push bc
@@ -1015,7 +1019,7 @@ missileCheckHitLoop
 checkNextPirateMissileHit
         ld a, l
         cp e
-        jr z, MissileHitPirate
+        jr z, MissileHitAsteroid
         ; check next position along (makes game better to play)
         inc hl
         ; compare upper and lower bytes of hl and de
@@ -1026,17 +1030,20 @@ checkNextPirateMissileHit
 checkNextPirateMissileHit2
         ld a, l
         cp e
-        jr z, MissileHitPirate
+        jr z, MissileHitAsteroid
 
         jr noHitMissile
-MissileHitPirate
+MissileHitAsteroid
         ;; missile/cannon HIT!!!
-
         ld a, (asteroidValidBitMapMaskTemp)
         ld b, a
         ld a, (asteroidValidBitMap)
         and b
         ld (asteroidValidBitMap), a
+
+        ld de, 760
+        ld a, (asteroidValidBitMap)
+        call print_number8bits
 
         ;also if we have hit then disable the missile now!!
         xor a
@@ -1216,11 +1223,11 @@ skipGameOverFlagSet
     ld (asteroidSpritePointer), hl
     ld hl, 1
     ld (pirateDirUpdate), hl
-    ld a, $ff   ; every pirate is alive
+    ;;ld a, $ff   ; every pirate is alive
     ;ld a, $01   ; for test only bottom right pirate is alive
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
-    ld (asteroidValidBitMap), a
+    ;;ld (asteroidValidBitMap), a
     ret
 
 
@@ -1282,11 +1289,11 @@ continueGampLoop
     ld (asteroidSpritePointer), hl
     ld hl, 1
     ld (pirateDirUpdate), hl
-    ld a, $ff   ; every pirate is alive
+    ;ld a, $ff   ; every pirate is alive
     ;ld a, $01   ; for test only bottom right pirate is alive
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
-    ld (asteroidValidBitMap), a
+    ;ld (asteroidValidBitMap), a
 
     xor a
     ld (goNextLevelFlag), a
