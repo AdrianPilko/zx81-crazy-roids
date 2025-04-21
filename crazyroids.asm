@@ -52,12 +52,11 @@ MISSILE_COUNTDOWN_INIT EQU 18
 ;#define PLAYER_START_POS 604
 PLAYER_START_POS EQU 637
 PLAYER_LIVES EQU 3
-;ASTEROID_START_POS EQU 366
 ASTEROID_START_POS EQU 45
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 1
 
-VSYNCLOOP       EQU      3
+VSYNCLOOP       EQU      1
 
 ; character set definition/helpers
 __:				EQU	$00	;spacja
@@ -312,7 +311,7 @@ initVariables
     xor a
     ld a, (MissileInFlightFlag)
     ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things
-    ld (nextPirateToFireIndex), a
+    ld (randNextAsteroidPosition), a
     ld (restartLevelFlag), a
     ld (sharkSpriteCycleCount), a
 	
@@ -354,10 +353,12 @@ initVariables
     ld a, (score_mem_hund)
     ld (last_score_mem_hund),a
 
-
-
+    call randAsteroidLocation
+    ; a now contains the random pos, need to get it in de
+    ld d, 0
+    ld e, a
     ld hl, Display+1
-    ld de, ASTEROID_START_POS
+    ;;ld de, ASTEROID_START_POS
     add hl, de
     ld (asteroidTopLeftPosition), hl
     xor a
@@ -429,18 +430,20 @@ continueWithGameLoop
 
     ld a, (evenOddLoopFlag)
     cp 0
-    jr z, skipSharkInGameLoop
+    jr z, skipUFOInGameLoop
 
+    call asteroidUFOCountUp
+    
     ld a, (evenOddLoopFlag)
     cp 1
     call z, updateAsteroidsPositions
 
-
     ld a, (UFOValid)
     cp 1
     call z, drawSharkBonus
-skipSharkInGameLoop
-    call setRandomPirateToShoot   ; this sets nextPirateToFireIndex
+
+skipUFOInGameLoop
+    ;call randAsteroidLocation   ; this sets randNextAsteroidPosition
 
     ;ld a, (bossLevelFlag)
     ;cp 0
@@ -650,9 +653,12 @@ updateAsteroidsPositions
 
 
     ld hl, (asteroidTopLeftPosition)
+    ;; to trigger hit even though not at bottom (and prevent memory overrite)
+    ld de, -33
+    add hl, de
     ld (asteroidRowLeftPositionTemp), hl
     ld hl, Display+1
-    ld de, $0341   ;the offset to the lowest row the asteroid should be able to get
+    ld de, $0321   ;the offset to the lowest row the asteroid should be able to get
     add hl, de
     ex de, hl
     ld hl, (asteroidRowLeftPositionTemp) ;; reload hl with asteroidRowLeftPositionTemp
@@ -673,8 +679,12 @@ continueToUpdateAsteroid
     ld (asteroidTopLeftPosition), hl
     ret
 resetUpdateAsteroid
+    call randAsteroidLocation
+    ; a now contains the random pos, need to get it in de
+    ld d, 0
+    ld e, a    
     ld hl, Display+1
-    ld de, ASTEROID_START_POS
+    ;ld de, ASTEROID_START_POS
     add hl, de
     ld (asteroidTopLeftPosition), hl
     ;reset bitmap valid
@@ -713,14 +723,14 @@ noMissileUpdate
 
 ;    jr endOfUpdatePirateXPos
 
-;reversePirateDirToNeg
-;    ld a, (UFOBonusCountUp)
-;    inc a
-;    ld (UFOBonusCountUp), a
-;    cp 2
-;    jr z, triggerShark
-;    jr notriggerShark
-triggerShark
+asteroidUFOCountUp
+    ld a, (UFOBonusCountUp)
+    inc a
+    ld (UFOBonusCountUp), a
+    cp 128
+    jr z, triggerUFO
+    jr notriggerUFO
+triggerUFO
     xor a
     ld (UFOBonusCountUp), a
     ld a, 24
@@ -728,7 +738,7 @@ triggerShark
     ld a, 1
     ld (UFOValid), a
 
-;notriggerShark
+notriggerUFO
 ;    ld hl, -1
 ;    ld (pirateDirUpdate), hl
 ;    ;; also shove down one row
@@ -935,7 +945,7 @@ checkIfMissileHit
     cp 0
     jp nz, skipCheckUFOHit
 
-    ; shark hit
+    ; UFO hit
     xor a
     ld (UFOValid), a
     ld b, 10
@@ -1560,14 +1570,20 @@ awardNewLife
 endOfIncreaseScore
     ret
 
-setRandomPirateToShoot
+randAsteroidLocation
 tryAnotherRCol                          ; generate random number between 0 and 3 inclusive
     ld a, r
-    and %00000011
-    cp 4
-    jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 4 again
-    inc a                               ; inc guarntees range 1 to 30 for col
-    ld (nextPirateToFireIndex), a
+    and %00111111
+    cp 24   ; always up to 26 as we add 2 on, only 32 columns and asteroid is 4 blocks wide
+    jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 26 again
+    ; then we need to add 33 to get it to start below the top row, and 2 to move it from left edge
+    ;push af
+    ;    ld de, 760
+    ;    call print_number8bits
+    ;pop af
+    ld b, 35 
+    add a, b
+    ld (randNextAsteroidPosition), a
     ret
 
 
@@ -1821,7 +1837,7 @@ blockFilled    ;8*10
 
 asteroidValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
     DB 0
-nextPirateToFireIndex
+randNextAsteroidPosition
     DB 0
 pirateFiringFlag
     DB 0
