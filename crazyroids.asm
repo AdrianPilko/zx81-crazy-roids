@@ -57,7 +57,7 @@ ASTEROID_START_POS EQU 45
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 1
 
-VSYNCLOOP       EQU      2
+VSYNCLOOP       EQU      3
 
 ; character set definition/helpers
 __:				EQU	$00	;spacja
@@ -641,15 +641,18 @@ skipMissileDraw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 updateAsteroidsPositions
-    ld a, (asteroidValidBitMap)
-    ld de, 760
-    call print_number8bits
+    ;ld a, (asteroidValidBitMap)
+    ;ld de, 760
+    ;call print_number8bits
+    ;ld bc, (asteroidTopLeftPosition)
+    ;ld de, 764
+    ;call print_number16bits
 
 
     ld hl, (asteroidTopLeftPosition)
     ld (asteroidRowLeftPositionTemp), hl
     ld hl, Display+1
-    ld de, $0321   ;1af $018e is the offset to the lowest row the asteroid should be able to get
+    ld de, $0341   ;the offset to the lowest row the asteroid should be able to get
     add hl, de
     ex de, hl
     ld hl, (asteroidRowLeftPositionTemp) ;; reload hl with asteroidRowLeftPositionTemp
@@ -1057,10 +1060,6 @@ MissileHitAsteroid
         ld a, (asteroidValidBitMap)
         and b
         ld (asteroidValidBitMap), a
-
-        ld de, 760
-        ld a, (asteroidValidBitMap)
-        call print_number8bits
 
         ;also if we have hit then disable the missile now!!
         xor a
