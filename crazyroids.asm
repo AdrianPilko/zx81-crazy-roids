@@ -353,14 +353,10 @@ initVariables
     ld a, (score_mem_hund)
     ld (last_score_mem_hund),a
 
-    call randAsteroidLocation
-    ; a now contains the random pos, need to get it in de
-    ld d, 0
-    ld e, a
-    ld hl, Display+1
-    ;;ld de, ASTEROID_START_POS
-    add hl, de
-    ld (asteroidTopLeftPositions), hl
+    xor a
+    ld (asteroidValidBitMap), a
+    call initialiseAsteroids
+
     xor a
     ld (asteroidSpriteCycleCount), a
     ld hl, asteroidSpriteData4x4
@@ -713,6 +709,8 @@ resetUpdateAsteroid
     ld (asteroidValidBitMap), a
     ld (asteroidValidBitMapMaskTemp), a
     ret
+
+
 
 
 updateMissilePosition
@@ -1376,6 +1374,87 @@ resetJollyRogerPos
     ld (levelCountDown), a
     ret
 
+initialiseAsteroids
+    ld hl, asteroidTopLeftPositions
+    call randAsteroidLocation
+    ld d, 0
+    ld e, a
+    push hl
+        ld hl, Display+1
+        add hl, de
+        push hl
+        pop de
+    pop hl
+    ld a, d
+    ld (hl), a
+    ld e, a
+    inc hl
+    ld (hl), a
+    inc hl    
+
+    call randAsteroidLocation
+    ld d, 0
+    ld e, a
+    push hl
+        ld hl, Display+1
+        add hl, de
+        push hl
+        pop de
+    pop hl
+    ld a, d
+    ld (hl), a
+    ld e, a
+    inc hl
+    ld (hl), a
+    inc hl    
+    ret
+
+initialiseAsteroids2
+    ld a, (asteroidValidBitMap)
+    push af
+        ld de, 780
+        call print_number8bits
+    pop af
+
+    ld hl, asteroidTopLeftPositions
+    ld b, 8 
+    ld c, 0  
+bit_check_loop
+    push bc
+    ld   d, a
+    srl  d 
+    jp   nc, bit_clear   ; If bit C is clear, jump to bit_clear
+    ; Bit is set
+bit_set
+    ;; do nothing, keep asteroid carrys on
+    ; but inc hl to move to next bit
+    inc hl
+    inc hl
+    jp next_bit
+bit_clear
+    call randAsteroidLocation
+    ; a now contains the random colunn, need to get it in de
+    ld d, 0
+    ld e, a
+    push hl
+        ld hl, Display+1
+        add hl, de
+        push hl
+        pop de
+    pop hl
+    ld a, d
+    ld (hl), a
+    ld e, a
+    inc hl
+    ld (hl), a
+    inc hl    
+    ;ld (asteroidTopLeftPositions), hl
+
+next_bit
+    pop bc
+    inc c  ; Move to the next bit position
+    djnz bit_check_loop ; Decrement B and loop if not zero
+    ret
 
 
 ;;;; sprite code
@@ -1525,9 +1604,9 @@ endOfIncreaseScore
 randAsteroidLocation
 tryAnotherRCol                          ; generate random number between 0 and 3 inclusive
     ld a, r
-    and %00111111
-    cp 24   ; always up to 26 as we add 2 on, only 32 columns and asteroid is 4 blocks wide
-    jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 26 again
+    and %00001111
+    ;cp 16   ; always up to 26 as we add 2 on, only 32 columns and asteroid is 4 blocks wide
+    ;jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 26 again
     ; then we need to add 33 to get it to start below the top row, and 2 to move it from left edge
     ;push af
     ;    ld de, 760
@@ -1657,6 +1736,8 @@ Display        	DB $76
                 DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
 Variables
 ExtraAllowAstOffBottom   ; bit wasteful of memory!
+                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
+                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
                 DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
                 DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
                 DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
@@ -1887,7 +1968,7 @@ deadPlayerSpritePointer
 playerSpritePointer
     DW 0
 asteroidTopLeftPositions
-    DW 16384,16385,16386,16387
+    DW 16384,16385,16386,16387,16388,16389,16390,16391
 asteroidRowLeftPositionTemp
     DW 0
 asteroidValidBitMapMaskTemp
