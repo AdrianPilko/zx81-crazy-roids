@@ -360,7 +360,7 @@ initVariables
     ld hl, Display+1
     ;;ld de, ASTEROID_START_POS
     add hl, de
-    ld (asteroidTopLeftPosition), hl
+    ld (asteroidTopLeftPositions), hl
     xor a
     ld (asteroidSpriteCycleCount), a
     ld hl, asteroidSpriteData4x4
@@ -647,12 +647,33 @@ updateAsteroidsPositions
     ;ld a, (asteroidValidBitMap)
     ;ld de, 760
     ;call print_number8bits
-    ;ld bc, (asteroidTopLeftPosition)
-    ;ld de, 764
-    ;call print_number16bits
+    ;jp noDebug
+    ld b, 4
+    ld hl, asteroidTopLeftPositions
+    ld de, 760  ; position of print initially then inc'd below
+debugPrintAsteroidPos
+    push bc
+        ld a, (hl)
+        ld c, a 
+        inc hl
+        ld a, (hl)
+        ld b, a
+        inc hl
+        push de
+        push hl
+            call print_number16bits
+        pop hl
+        pop de  
+        inc de 
+        inc de
+        inc de
+        inc de
+        inc de
+    pop bc
+    djnz debugPrintAsteroidPos
+noDebug
 
-
-    ld hl, (asteroidTopLeftPosition)
+    ld hl, (asteroidTopLeftPositions)
     ;; to trigger hit even though not at bottom (and prevent memory overrite)
     ld de, -33
     add hl, de
@@ -668,15 +689,15 @@ updateAsteroidsPositions
     jr continueToUpdateAsteroid
     ;;; TDOO loop for multiple asteroids
 continueToUpdateAsteroid
-    ld de, (asteroidTopLeftPosition)
+    ld de, (asteroidTopLeftPositions)
     ld hl, blankSprite
     ld c, 16
     ld b, 1
     call drawSprite
-    ld hl, (asteroidTopLeftPosition)
+    ld hl, (asteroidTopLeftPositions)
     ld de, 33
     add hl, de
-    ld (asteroidTopLeftPosition), hl
+    ld (asteroidTopLeftPositions), hl
     ret
 resetUpdateAsteroid
     call randAsteroidLocation
@@ -686,7 +707,7 @@ resetUpdateAsteroid
     ld hl, Display+1
     ;ld de, ASTEROID_START_POS
     add hl, de
-    ld (asteroidTopLeftPosition), hl
+    ld (asteroidTopLeftPositions), hl
     ;reset bitmap valid
     ld a, $ff
     ld (asteroidValidBitMap), a
@@ -739,75 +760,6 @@ triggerUFO
     ld (UFOValid), a
 
 notriggerUFO
-;    ld hl, -1
-;    ld (pirateDirUpdate), hl
-;    ;; also shove down one row
-;    ;before we do that we need to blank the line where the pirates "heads" were
-;    ld de, (asteroidTopLeftPosition)
-;    ld hl, blankSprite
-;    ld c, 16
-;    ld b, 1
-;    call drawSprite
-;    ld hl, (asteroidTopLeftPosition)
-;    ld de, 165
-;    add hl, de
-;    ex de, hl
-;    ld hl, blankSprite
-;    ld c, 16
-;    ld b, 1
-;    call drawSprite
-;    ;; finally move one row down
-;    ld hl, (asteroidTopLeftPosition)
-;    ld de, 33
-;    add hl, de
-;    ld (asteroidTopLeftPosition),hl
-
-;    jr endOfUpdatePirateXPos
-
-;reversePirateDirToPos
-;    ld hl, 1
-;    ld (pirateDirUpdate), hl
-;    ;; also shove down one row
-;    ;before we do that we need to blank the line where the pirates "heads" were
-;    ld de, (asteroidTopLeftPosition)
-;    ld hl, blankSprite
-;    ld c, 16
-;    ld b, 1
-;    call drawSprite
-;    ;; and blank the middle bit between the rows of pirates
-;    ld hl, (asteroidTopLeftPosition)
-;    ld de, 165
-;    add hl, de
-;    ex de, hl
-;    ld hl, blankSprite
-;    ld c, 16
-;    ld b, 1
-;    call drawSprite
-
-    ;; finally move one row down
-;    ld hl, (asteroidTopLeftPosition)
-;    ld de, 33
-;    add hl, de
-;    ld (asteroidTopLeftPosition),hl
- ;   jr endOfUpdatePirateXPos
-
-;endOfUpdatePirateXPos
-;IF DEFINED DEBUG_PIRATE_DIR
-;    ld a,(pirateXPos)
-;    ld de, 760
-;    call print_number8bits
-;ENDIF
- ;   ld hl, (asteroidTopLeftPosition)
- ;   ;ld (previousPirateLocation), hl
- ;   ld de, (pirateDirUpdate)
- ;   add hl, de
- ;   ld (asteroidTopLeftPosition), hl
-
- ;   ld hl, (pirateDirUpdate)
- ;   ld a, (pirateXPos)
- ;   add a, l
- ;   ld (pirateXPos), a
-
     ret
 
 updateJollyRoger
@@ -887,7 +839,7 @@ checkIfPlayerHit
     ld hl, (currentPlayerLocation)
     ld de, 33
     sbc hl, de
-    ld de, (asteroidTopLeftPosition)
+    ld de, (asteroidTopLeftPositions)
     sbc hl, de
     call z, executeRestartLevel
 skipPlayerHit
@@ -903,7 +855,7 @@ drawAsteroid
     jp z, skipDrawAsteroid
     
 
-   ld de, (asteroidTopLeftPosition)
+   ld de, (asteroidTopLeftPositions)
    ld hl, (asteroidSpritePointer)
    ld b, 4
    ld c, 4 
@@ -1009,7 +961,7 @@ noHitMissileBoss
     ret
 
 skipCheckBossHit
-    ld hl, (asteroidTopLeftPosition)
+    ld hl, (asteroidTopLeftPositions)
 
     ld (asteroidRowLeftPositionTemp), hl
     ;becasue the whole loop is setup to count down, and because we want to check the
@@ -1241,7 +1193,7 @@ skipGameOverFlagSet
     ld hl, Display+1
     ld de, ASTEROID_START_POS
     add hl, de
-    ld (asteroidTopLeftPosition), hl
+    ld (asteroidTopLeftPositions), hl
     xor a
     ld (asteroidSpriteCycleCount), a
     ld hl, asteroidSpriteData4x4
@@ -1307,7 +1259,7 @@ continueGampLoop
     ld hl, Display+1
     ld de, ASTEROID_START_POS
     add hl, de
-    ld (asteroidTopLeftPosition), hl
+    ld (asteroidTopLeftPositions), hl
     xor a
     ld (asteroidSpriteCycleCount), a
     ld hl, asteroidSpriteData4x4
@@ -1703,9 +1655,14 @@ Display        	DB $76
                 DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
                 DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
                 DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-
 Variables
-
+ExtraAllowAstOffBottom   ; bit wasteful of memory!
+                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
+                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
+                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
+                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
+                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
+                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
 missileData
     ;; small straight missile 
     DB $00, $00, $00, $00 
@@ -1929,8 +1886,8 @@ deadPlayerSpritePointer
     DW 0
 playerSpritePointer
     DW 0
-asteroidTopLeftPosition
-    DW 0
+asteroidTopLeftPositions
+    DW 16384,16385,16386,16387
 asteroidRowLeftPositionTemp
     DW 0
 asteroidValidBitMapMaskTemp
