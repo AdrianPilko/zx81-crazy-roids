@@ -52,11 +52,11 @@ MISSILE_COUNTDOWN_INIT EQU 18
 ;#define PLAYER_START_POS 604
 PLAYER_START_POS EQU 637
 PLAYER_LIVES EQU 3
-ASTEROID_START_POS EQU 45
+ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 1
 
-VSYNCLOOP       EQU      2
+VSYNCLOOP       EQU      1
 
 ; character set definition/helpers
 __:				EQU	$00	;spacja
@@ -181,6 +181,19 @@ introWaitLoop
 introWaitLoop_1
     push bc
     pop bc
+
+    ld hl, (randomSeed)  ; attempt to set random seed based on time user takes to press start
+    inc hl
+    ld a, $1f   ; we want a random seed index into the ROM which is 8Kbytes or zero to 8191 = 1f00 hex
+    cp h
+    jr z, resetRandSeed_1
+    ld (randomSeed),hl
+	djnz introWaitLoop_1
+    jp read_start_key_1  
+resetRandSeed_1
+    ld hl, 0
+    ld (randomSeed), hl
+
 	djnz introWaitLoop_1
     jp read_start_key_1     ;; have to have 2 labels as not a call return
 
@@ -355,7 +368,11 @@ initVariables
 
     xor a
     ld (asteroidValidBitMap), a
-    call initialiseAsteroids
+    ;call initialiseAsteroids2
+    call resetUpdateAsteroid
+
+    ;;ld hl, $00 
+    ;;ld (randomSeed), hl     
 
     xor a
     ld (asteroidSpriteCycleCount), a
@@ -448,7 +465,7 @@ skipUFOInGameLoop
 
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
-    ld c, 8
+    ld c, 4
     ld b, 4
     call drawSprite
 
@@ -548,7 +565,7 @@ moveLeft
 moveRight
     ld a, (playerXPos)
     inc a
-    cp 24          ;;; this prevents the player moving past edge, but if it's a door
+    cp 28          ;;; this prevents the player moving past edge, but if it's a door
                    ;; trigger seperate code to move to new room
 
     jp z, updateRestOfScreen
@@ -668,6 +685,9 @@ debugPrintAsteroidPos
     pop bc
     djnz debugPrintAsteroidPos
 noDebug
+    ld b, 4
+    ld hl, asteroidTopLeftPositions
+    ld de, 760  ; position of print initially then inc'd below
 
     ld hl, (asteroidTopLeftPositions)
     ;; to trigger hit even though not at bottom (and prevent memory overrite)
@@ -682,12 +702,13 @@ noDebug
     ld a, h
     cp d
     jr z, resetUpdateAsteroid
-    jr continueToUpdateAsteroid
-    ;;; TDOO loop for multiple asteroids
+    ;jr continueToUpdateAsteroid
+    
+    ;;; TODO loop for multiple asteroids
 continueToUpdateAsteroid
     ld de, (asteroidTopLeftPositions)
     ld hl, blankSprite
-    ld c, 16
+    ld c, 4
     ld b, 1
     call drawSprite
     ld hl, (asteroidTopLeftPositions)
@@ -698,16 +719,20 @@ continueToUpdateAsteroid
 resetUpdateAsteroid
     call randAsteroidLocation
     ; a now contains the random pos, need to get it in de
+    ld a, (randNextAsteroidPosition)
     ld d, 0
     ld e, a    
     ld hl, Display+1
     ;ld de, ASTEROID_START_POS
+    add hl, de
+    ld de, 33
     add hl, de
     ld (asteroidTopLeftPositions), hl
     ;reset bitmap valid
     ld a, $ff
     ld (asteroidValidBitMap), a
     ld (asteroidValidBitMapMaskTemp), a
+   ; call initialiseAsteroids2
     ret
 
 
@@ -1410,17 +1435,17 @@ initialiseAsteroids
     ret
 
 initialiseAsteroids2
-    ld a, (asteroidValidBitMap)
     push af
         ld de, 780
         call print_number8bits
     pop af
 
     ld hl, asteroidTopLeftPositions
-    ld b, 8 
+    ld b, 8
     ld c, 0  
 bit_check_loop
     push bc
+    ld a, (asteroidValidBitMap)
     ld   d, a
     srl  d 
     jp   nc, bit_clear   ; If bit C is clear, jump to bit_clear
@@ -1448,12 +1473,14 @@ bit_clear
     inc hl
     ld (hl), a
     inc hl    
-    ;ld (asteroidTopLeftPositions), hl
-
 next_bit
     pop bc
     inc c  ; Move to the next bit position
     djnz bit_check_loop ; Decrement B and loop if not zero
+
+    ; the idea is that by end of this all the asteroids should be valid
+    ;ld a, $ff
+    ;ld (asteroidValidBitMap), a
     ret
 
 
@@ -1602,20 +1629,50 @@ endOfIncreaseScore
     ret
 
 randAsteroidLocation
-tryAnotherRCol                          ; generate random number between 0 and 3 inclusive
-    ld a, r
-    and %00001111
-    ;cp 16   ; always up to 26 as we add 2 on, only 32 columns and asteroid is 4 blocks wide
-    ;jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 26 again
-    ; then we need to add 33 to get it to start below the top row, and 2 to move it from left edge
-    ;push af
-    ;    ld de, 760
-    ;    call print_number8bits
-    ;pop af
-    ld b, 35 
-    add a, b
+    call setRandomNumber16
+    cp 28  ; cannot be more than 28 due to 4 byte width of the sprite
+    jr noAdjustRand
+    ld b, 4
+    sub b
+noAdjustRand
     ld (randNextAsteroidPosition), a
     ret
+
+
+setRandomNumber16
+    ld hl, (randomSeed)  ; attempt to set random seed based on time user takes to press start
+    inc hl
+    ld (randomSeed),hl
+    
+    ld de, 780
+    push hl
+       call print_number16bits
+    pop hl
+    ld a, (hl)
+;; limit to 2 to 28
+    cp 2           ; Compare A with 2
+    jr c, limitTo2 ; If A < 2, jump to clamp to 2
+    cp 29       ; Compare A with 28
+    jr nc, limitTo28 ; If A >= 29, jump to clamp to 28
+    ; A is already between 2 and 28 inclusive
+    jr randLimitComplete
+limitTo2:
+    ld a, 2
+    jr randLimitComplete
+limitTo28:
+    ld a, 28
+randLimitComplete
+    ; A is now guaranteed to be between 2 and 28
+
+    push af
+    ld de, 786
+    call print_number8bits
+    pop af
+
+    ; a now contains random number 0,1,2,3,..,31
+    ret
+
+
 
 
 ; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
@@ -2011,6 +2068,8 @@ gameOverRestartFlag
     DB 0
 goNextLevelFlag
     DB 0
+randomSeed
+    DW 0
 
 LivesText
     DB _L,_I,_V,_E,_S,_EQ,$ff
