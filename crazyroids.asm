@@ -173,11 +173,11 @@ Line1Text:      DB $ea                        ; REM
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;	jp intro_title		; main entry point
+	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; in test mode comment in each thing below in turn, and comment out the jp intro_title	above
-    call test_initialiseAsteroids
+;    call test_initialiseAsteroids
 
 ;;; end of test modes    
 
@@ -1901,12 +1901,13 @@ deadPlayerSpritePointer
     DW 0
 playerSpritePointer
     DW 0
-;asteroidTopLeftPositions
+;asteroidTopLeftPositions   ; now moved to other file
 ;    DW 16384,16385,16386,16387,16388,16389,16390,16391
-;asteroidRowLeftPositionTemp
-;    DW 0
-;asteroidValidBitMapMaskTemp
-;    DB 0
+
+asteroidRowLeftPositionTemp
+    DW 0
+asteroidValidBitMapMaskTemp
+    DB 0
 bitsetMaskAsteroidTemp
     DB 0
 asteroidSpriteCycleCount

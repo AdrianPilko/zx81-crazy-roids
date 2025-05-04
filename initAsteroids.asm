@@ -1,29 +1,44 @@
 
-asteroidTopLeftPositions
+asteroidTopLeftPositions        ; these are the offsets from Display
     DW 0,0,0,0,0,0,0,0
-asteroidRowLeftPositionTemp
-    DW 0
-asteroidValidBitMapMaskTemp
+asteroidValidBitMapMask         ; valid asteroids "bitmap", we're having 8 asteroids so one bit per astreroid
     DB 0
 
+initialiseAsteroidValidAllOn
+    ld a, $ff
+    ld (asteroidValidBitMapMask), a
+    ret
+
+initialiseAValidAlternate
+    ld a, $55
+    ld (asteroidValidBitMapMask), a
+    ret
+
 initialiseAsteroids    
-    call randAsteroidLocation
+    ld b, 8
     ld hl, asteroidTopLeftPositions
-    ld d, 0
-    ld e, a
-    push hl
-        ld hl, Display+1
-        add hl, de
+initAsteroidsLoop
+    push bc
         push hl
-        pop de
-    pop hl
+            call randAsteroidLocation   
+        pop hl
+        ld d, 0
+        ld e, a
+        push hl
+            ld hl, Display+1
+            add hl, de
+            push hl
+            pop de
+        pop hl
 
-    ld a, e
-    ld (hl), a
-    ld a, d
-    inc hl
-    ld (hl), a
-
+        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+        ld (hl), a
+        ld a, d
+        inc hl
+        ld (hl), a
+        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
+    pop bc
+    djnz initAsteroidsLoop
     ret
 
 randAsteroidLocation
@@ -74,6 +89,7 @@ test_initialiseAsteroids
 
     ;; call the function we're testing
     call initialiseAsteroids
+    call initialiseAValidAlternate
 
     ld b, 4
     ld hl, asteroidTopLeftPositions
@@ -121,6 +137,39 @@ debugPrintAsteroidPos2ndRow
         inc de
     pop bc
     djnz debugPrintAsteroidPos2ndRow
+
+    ld b, 8    
+    ld de, 364
+    ld a, (asteroidValidBitMapMask)
+    ld c, a
+
+debugAsteroidValidLoop
+    rl c           ; Rotate left through carry
+    push bc
+        jr c, debugAsteroidValidLoopSET  ; If carry is set, bit was 1
+        jr debugAsteroidValidLoopSKIP
+debugAsteroidValidLoopSET:
+        push de
+            push hl
+                ld a, 1
+                call print_number8bits
+            pop hl
+        pop de  
+        jr checkdebugAsteroidValid
+debugAsteroidValidLoopSKIP:
+        push de
+            push hl
+                ld a, 0
+                call print_number8bits
+            pop hl
+        pop de       
+checkdebugAsteroidValid:        
+        inc de  ; move screen write pos on by 3 form start (so there's a space between)
+        inc de
+        inc de
+    pop bc
+    djnz debugAsteroidValidLoop
+
 
 endTestHaltLoop
     jp   endTestHaltLoop 
