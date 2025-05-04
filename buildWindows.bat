@@ -8,7 +8,7 @@ del crazyroids.p
 del *.lst
 del *.sym
 
-call e:\zx81\pasmo.exe -v crazyroids.asm crazyroids.p
+call e:\zx81\pasmo.exe -v crazyroids.asm crazyroids.p crazyroids.lst
 
 REM call will auto run emulator EightyOne if installed
 REM comment in or out usin rem which one to run

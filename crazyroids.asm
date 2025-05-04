@@ -173,8 +173,15 @@ Line1Text:      DB $ea                        ; REM
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	jp intro_title		; main entry point
+;	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; in test mode comment in each thing below in turn, and comment out the jp intro_title	above
+    call test_initialiseAsteroids
+
+;;; end of test modes    
+
+
 
 introWaitLoop
 	ld b,64
@@ -1399,90 +1406,7 @@ resetJollyRogerPos
     ld (levelCountDown), a
     ret
 
-initialiseAsteroids
-    ld hl, asteroidTopLeftPositions
-    call randAsteroidLocation
-    ld d, 0
-    ld e, a
-    push hl
-        ld hl, Display+1
-        add hl, de
-        push hl
-        pop de
-    pop hl
-    ld a, d
-    ld (hl), a
-    ld e, a
-    inc hl
-    ld (hl), a
-    inc hl    
-
-    call randAsteroidLocation
-    ld d, 0
-    ld e, a
-    push hl
-        ld hl, Display+1
-        add hl, de
-        push hl
-        pop de
-    pop hl
-    ld a, d
-    ld (hl), a
-    ld e, a
-    inc hl
-    ld (hl), a
-    inc hl    
-    ret
-
-initialiseAsteroids2
-    push af
-        ld de, 780
-        call print_number8bits
-    pop af
-
-    ld hl, asteroidTopLeftPositions
-    ld b, 8
-    ld c, 0  
-bit_check_loop
-    push bc
-    ld a, (asteroidValidBitMap)
-    ld   d, a
-    srl  d 
-    jp   nc, bit_clear   ; If bit C is clear, jump to bit_clear
-    ; Bit is set
-bit_set
-    ;; do nothing, keep asteroid carrys on
-    ; but inc hl to move to next bit
-    inc hl
-    inc hl
-    jp next_bit
-bit_clear
-    call randAsteroidLocation
-    ; a now contains the random colunn, need to get it in de
-    ld d, 0
-    ld e, a
-    push hl
-        ld hl, Display+1
-        add hl, de
-        push hl
-        pop de
-    pop hl
-    ld a, d
-    ld (hl), a
-    ld e, a
-    inc hl
-    ld (hl), a
-    inc hl    
-next_bit
-    pop bc
-    inc c  ; Move to the next bit position
-    djnz bit_check_loop ; Decrement B and loop if not zero
-
-    ; the idea is that by end of this all the asteroids should be valid
-    ;ld a, $ff
-    ;ld (asteroidValidBitMap), a
-    ret
-
+include initAsteroids.asm
 
 ;;;; sprite code
 ;;;; our sprites are custom 8 by 8 charactor blocks - so will look fairly big (maybe too big)
@@ -1627,53 +1551,6 @@ awardNewLife
     ld (playerLives),a
 endOfIncreaseScore
     ret
-
-randAsteroidLocation
-    call setRandomNumber16
-    cp 28  ; cannot be more than 28 due to 4 byte width of the sprite
-    jr noAdjustRand
-    ld b, 4
-    sub b
-noAdjustRand
-    ld (randNextAsteroidPosition), a
-    ret
-
-
-setRandomNumber16
-    ld hl, (randomSeed)  ; attempt to set random seed based on time user takes to press start
-    inc hl
-    ld (randomSeed),hl
-    
-    ld de, 780
-    push hl
-       call print_number16bits
-    pop hl
-    ld a, (hl)
-;; limit to 2 to 28
-    cp 2           ; Compare A with 2
-    jr c, limitTo2 ; If A < 2, jump to clamp to 2
-    cp 29       ; Compare A with 28
-    jr nc, limitTo28 ; If A >= 29, jump to clamp to 28
-    ; A is already between 2 and 28 inclusive
-    jr randLimitComplete
-limitTo2:
-    ld a, 2
-    jr randLimitComplete
-limitTo28:
-    ld a, 28
-randLimitComplete
-    ; A is now guaranteed to be between 2 and 28
-
-    push af
-    ld de, 786
-    call print_number8bits
-    pop af
-
-    ; a now contains random number 0,1,2,3,..,31
-    ret
-
-
-
 
 ; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
 printstring
@@ -2024,12 +1901,12 @@ deadPlayerSpritePointer
     DW 0
 playerSpritePointer
     DW 0
-asteroidTopLeftPositions
-    DW 16384,16385,16386,16387,16388,16389,16390,16391
-asteroidRowLeftPositionTemp
-    DW 0
-asteroidValidBitMapMaskTemp
-    DB 0
+;asteroidTopLeftPositions
+;    DW 16384,16385,16386,16387,16388,16389,16390,16391
+;asteroidRowLeftPositionTemp
+;    DW 0
+;asteroidValidBitMapMaskTemp
+;    DB 0
 bitsetMaskAsteroidTemp
     DB 0
 asteroidSpriteCycleCount
