@@ -3,7 +3,8 @@
 drawAsteroid
 
 assumeAllAsteroidsValid
-    ld b, 1
+    ld b, 8                                 ; we have 8 asteroids on screen at any one time
+    ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
 
 drawAsteroidLoop
     push bc
@@ -14,40 +15,57 @@ drawAsteroidLoop
         cp b
         jp z, skipDrawAsteroid
 
-        ;ld de, (asteroidTopLeftPositions)  ;; should be doing this in the drawAsteroid subroutine
-        ld hl, (asteroidTopLeftPositions)  ;; should be doing this in the drawAsteroid subroutine
-        ld de, -33
-        add hl, de
+        ;; get the next asteroid position from asteroidTopLeftPositions via hl
         push hl
-        pop de 
-        ld hl, blankSprite
-        ld c, 4
-        ld b, 1
-        call drawSprite
+            ld a, (hl)
+            ld e, a
+            inc hl
+            ld a, (hl)
+            ld d, a      ; de now contains the contents of the location offset from asteroidTopLeftPositions
+            push de
+            pop hl
+                ld de, -33
+                add hl, de
+            push hl
+            pop de 
+            ld hl, blankSprite
+            ld c, 4
+            ld b, 1
+            call drawSprite
+        pop hl
 
-        ld de, (asteroidTopLeftPositions)
-        ld hl, (asteroidSpritePointer)
-        ld b, 4
-        ld c, 4 
-        call drawSprite
-
-        ld a, (asteroidSpriteCycleCount)
-        inc a
-        cp 2
-        jr z, resetAsteroidSprite
-        ld (asteroidSpriteCycleCount), a
-        ld hl, (asteroidSpritePointer)
-        ld de, 32
-        add hl, de
-        ld (asteroidSpritePointer), hl
-        jr skipDrawAsteroid
-
+        push hl
+            ld a, (hl)
+            ld e, a
+            inc hl
+            ld a, (hl)
+            ld d, a      ; de now contains the contents of the location offset from asteroidTopLeftPositions
+            ld hl, (asteroidSpritePointer)
+            ld b, 4
+            ld c, 4 
+            call drawSprite
+        pop hl
+        inc hl    ; move hl onto the next asteroid position
+        inc hl
+        push hl
+            ld a, (asteroidSpriteCycleCount)
+            inc a
+            cp 2
+            jr z, resetAsteroidSprite
+            ld (asteroidSpriteCycleCount), a
+            ld hl, (asteroidSpritePointer)
+            ld de, 32
+            add hl, de
+            ld (asteroidSpritePointer), hl
+            jr skipUpdateAsteroidSpritePtr
 resetAsteroidSprite
-        xor a
-        ld (asteroidSpriteCycleCount), a
-        ld hl, asteroidSpriteData4x4
-        ld (asteroidSpritePointer), hl    
-    skipDrawAsteroid
+            xor a
+            ld (asteroidSpriteCycleCount), a
+            ld hl, asteroidSpriteData4x4
+            ld (asteroidSpritePointer), hl    
+skipUpdateAsteroidSpritePtr
+        pop hl
+skipDrawAsteroid
     pop bc 
     djnz drawAsteroidLoop
 
