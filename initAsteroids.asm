@@ -36,6 +36,12 @@ initAsteroidsLoop
         inc hl          ; move to next asteroid location from asteroidTopLeftPositions
     pop bc
     djnz initAsteroidsLoop
+
+    xor a
+    ld (asteroidSpriteCycleCount), a
+    ld hl, asteroidSpriteData4x4
+    ld (asteroidSpritePointer), hl
+    
     ret
 
 randAsteroidLocation

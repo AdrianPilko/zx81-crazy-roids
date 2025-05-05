@@ -66,19 +66,19 @@ continueUpdateAsteroid
         jp endLoopUpdateAsteroids
 resetUpdateAsteroid
 
-        push hl
-            push de
-            push bc
-            push af
-        
-            ld bc,68
-            ld de,resetAsteroidText
-            call printstring
-        
-            pop af
-            pop bc
-            pop de
-        pop hl
+        ;push hl
+        ;    push de
+        ;    push bc
+        ;    push af
+        ;
+        ;    ld bc,68
+        ;    ld de,resetAsteroidText
+        ;    call printstring
+       ; 
+       ;     pop af
+       ;     pop bc
+       ;     pop de
+       ; pop hl
 
     push hl
         call randAsteroidLocation

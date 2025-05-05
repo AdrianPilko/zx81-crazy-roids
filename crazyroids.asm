@@ -180,10 +180,10 @@ Line1Text:      DB $ea                        ; REM
 
 ;    call test_UpdateAsteroids
 ;    call test_initialiseAsteroids
+;     call test_drawAsteroids
 ;endTest
 ;    jr endTest
 ;;; end of test modes    
-
 
 
 introWaitLoop
@@ -471,7 +471,7 @@ skipUFOInGameLoop
     ;ld a, (bossLevelFlag)
     ;cp 0
     ;call z, drawAsteroid
-    call drawAsteroid
+    call drawAsteroids
 
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
@@ -1868,7 +1868,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_5,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_1,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_3,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 

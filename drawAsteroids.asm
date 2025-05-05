@@ -1,6 +1,6 @@
 ;;; todo not yet ugraded to multiple asteroids (only does first oin
 
-drawAsteroid
+drawAsteroids
 
 assumeAllAsteroidsValid
     ld b, 8                                 ; we have 8 asteroids on screen at any one time
@@ -71,3 +71,27 @@ skipDrawAsteroid
 
     ret   
 
+
+testAsteroidText_done
+    db _T,_E,_S,_T,__,_D,_O,_N,_E,$ff
+
+test_drawAsteroids
+    
+    call initialiseAsteroids
+    call initialiseAValidAlternate
+
+    ld b, $ff
+test_DrawAsteroidLoop
+    push bc
+        call updateAsteroidsPositions
+        call drawAsteroids
+    pop bc
+    djnz test_DrawAsteroidLoop
+
+    ld bc,728
+    ld de,testAsteroidText_done
+    call printstring
+
+endTestDrawAsteroid
+    jr endTestDrawAsteroid
+    ret
