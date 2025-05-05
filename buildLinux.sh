@@ -1,4 +1,5 @@
 #!/bin/sh
 
-pasmo -v crazyroids.asm crazyroids.p
+rm -f crazyroids.p
+pasmo -v crazyroids.asm crazyroids.p crazyroids.lst
 

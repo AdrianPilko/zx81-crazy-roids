@@ -172,13 +172,16 @@ Line1Text:      DB $ea                        ; REM
 
 
 
+;; in test mode comment out jp intro_title and comment in the test calls
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; in test mode comment in each thing below in turn, and comment out the jp intro_title	above
+;    call test_UpdateAsteroids
 ;    call test_initialiseAsteroids
-
+;endTest
+;    jr endTest
 ;;; end of test modes    
 
 
@@ -375,8 +378,8 @@ initVariables
 
     xor a
     ld (asteroidValidBitMap), a
-    ;call initialiseAsteroids2
-    call resetUpdateAsteroid
+    call initialiseAsteroids
+    ;call resetUpdateAsteroid
 
     ;;ld hl, $00 
     ;;ld (randomSeed), hl     
@@ -663,87 +666,9 @@ skipMissileDraw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-updateAsteroidsPositions
-    ;ld a, (asteroidValidBitMap)
-    ;ld de, 760
-    ;call print_number8bits
-    ;jp noDebug
-    ld b, 4
-    ld hl, asteroidTopLeftPositions
-    ld de, 760  ; position of print initially then inc'd below
-debugPrintAsteroidPos
-    push bc
-        ld a, (hl)
-        ld c, a 
-        inc hl
-        ld a, (hl)
-        ld b, a
-        inc hl
-        push de
-        push hl
-            call print_number16bits
-        pop hl
-        pop de  
-        inc de 
-        inc de
-        inc de
-        inc de
-        inc de
-    pop bc
-    djnz debugPrintAsteroidPos
-noDebug
-    ld b, 4
-    ld hl, asteroidTopLeftPositions
-    ld de, 760  ; position of print initially then inc'd below
-
-    ld hl, (asteroidTopLeftPositions)
-    ;; to trigger hit even though not at bottom (and prevent memory overrite)
-    ld de, -33
-    add hl, de
-    ld (asteroidRowLeftPositionTemp), hl
-    ld hl, Display+1
-    ld de, $0321   ;the offset to the lowest row the asteroid should be able to get
-    add hl, de
-    ex de, hl
-    ld hl, (asteroidRowLeftPositionTemp) ;; reload hl with asteroidRowLeftPositionTemp
-    ld a, h
-    cp d
-    jr z, resetUpdateAsteroid
-    ;jr continueToUpdateAsteroid
-    
-    ;;; TODO loop for multiple asteroids
-continueToUpdateAsteroid
-    ld de, (asteroidTopLeftPositions)
-    ld hl, blankSprite
-    ld c, 4
-    ld b, 1
-    call drawSprite
-    ld hl, (asteroidTopLeftPositions)
-    ld de, 33
-    add hl, de
-    ld (asteroidTopLeftPositions), hl
-    ret
-resetUpdateAsteroid
-    call randAsteroidLocation
-    ; a now contains the random pos, need to get it in de
-    ld a, (randNextAsteroidPosition)
-    ld d, 0
-    ld e, a    
-    ld hl, Display+1
-    ;ld de, ASTEROID_START_POS
-    add hl, de
-    ld de, 33
-    add hl, de
-    ld (asteroidTopLeftPositions), hl
-    ;reset bitmap valid
-    ld a, $ff
-    ld (asteroidValidBitMap), a
-    ld (asteroidValidBitMapMaskTemp), a
-   ; call initialiseAsteroids2
-    ret
-
-
-
+include initAsteroids.asm
+include updateAsteroids.asm
+include drawAsteroids.asm
 
 updateMissilePosition
       ld a, (missileCountDown)
@@ -874,40 +799,6 @@ checkIfPlayerHit
     call z, executeRestartLevel
 skipPlayerHit
     ret
-
-
-drawAsteroid
-;;; initially just check if first asteroid is valid
-    ld a, $fe
-    ld b, a
-    ld a, (asteroidValidBitMap)
-    cp b
-    jp z, skipDrawAsteroid
-    
-
-   ld de, (asteroidTopLeftPositions)
-   ld hl, (asteroidSpritePointer)
-   ld b, 4
-   ld c, 4 
-   call drawSprite
-
-   ld a, (asteroidSpriteCycleCount)
-   inc a
-   cp 2
-   jr z, resetAsteroidSprite
-   ld (asteroidSpriteCycleCount), a
-   ld hl, (asteroidSpritePointer)
-   ld de, 32
-   add hl, de
-   ld (asteroidSpritePointer), hl
-   ret
-resetAsteroidSprite
-   xor a
-   ld (asteroidSpriteCycleCount), a
-   ld hl, asteroidSpriteData4x4
-   ld (asteroidSpritePointer), hl    
-skipDrawAsteroid
-   ret   
 
 ;; check if missile hit piratasteroids
 
@@ -1405,8 +1296,6 @@ resetJollyRogerPos
     ld a, LEVEL_COUNT_DOWN_INIT
     ld (levelCountDown), a
     ret
-
-include initAsteroids.asm
 
 ;;;; sprite code
 ;;;; our sprites are custom 8 by 8 charactor blocks - so will look fairly big (maybe too big)
@@ -1948,6 +1837,12 @@ goNextLevelFlag
     DB 0
 randomSeed
     DW 0
+asteroidTopLeftPositions        ; these are the offsets from Display
+    DW 0,0,0,0,0,0,0,0
+asteroidValidBitMapMask         ; valid asteroids "bitmap", we're having 8 asteroids so one bit per astreroid
+    DB 0
+
+
 
 LivesText
     DB _L,_I,_V,_E,_S,_EQ,$ff

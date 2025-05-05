@@ -1,9 +1,4 @@
 
-asteroidTopLeftPositions        ; these are the offsets from Display
-    DW 0,0,0,0,0,0,0,0
-asteroidValidBitMapMask         ; valid asteroids "bitmap", we're having 8 asteroids so one bit per astreroid
-    DB 0
-
 initialiseAsteroidValidAllOn
     ld a, $ff
     ld (asteroidValidBitMapMask), a
@@ -26,6 +21,8 @@ initAsteroidsLoop
         ld e, a
         push hl
             ld hl, Display+1
+            add hl, de
+            ld de, 33       ; add an extra 33 to keep it 2 off the top - so blank works
             add hl, de
             push hl
             pop de
