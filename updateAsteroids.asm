@@ -88,7 +88,7 @@ resetUpdateAsteroid
         ld e, a    
         ld hl, Display+1
         add hl, de
-        ld de, 33
+        ld de, 66
         add hl, de
         push hl
         pop de
@@ -104,10 +104,9 @@ resetUpdateAsteroid
     ld (hl), a
     inc hl
 
-    ;reset bitmap valid
-    ld a, $ff
-    ld (asteroidValidBitMap), a
-    ld (asteroidValidBitMapMaskTemp), a
+    ;; need to reset the asteroid if it's been hit
+
+    ;;;;;;;;;; TODO
 
 endLoopUpdateAsteroids
     pop bc

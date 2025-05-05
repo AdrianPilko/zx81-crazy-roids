@@ -178,8 +178,8 @@ Line1Text:      DB $ea                        ; REM
 	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;    call test_UpdateAsteroids
 ;    call test_initialiseAsteroids
+;    call test_UpdateAsteroids
 ;     call test_drawAsteroids
 ;endTest
 ;    jr endTest
@@ -376,10 +376,8 @@ initVariables
     ld a, (score_mem_hund)
     ld (last_score_mem_hund),a
 
-    xor a
-    ld (asteroidValidBitMap), a
+    call initialiseAsteroidValidAllOn
     call initialiseAsteroids
-    ;call resetUpdateAsteroid
 
     ;;ld hl, $00 
     ;;ld (randomSeed), hl     
@@ -390,11 +388,6 @@ initVariables
     ld (asteroidSpritePointer), hl
     ld hl, 1
     ld (pirateDirUpdate), hl
-    ld a, $ff   ; every pirate is alive
-    ;ld a, $01   ; for test only bottom right pirate is alive
-    ;ld a, $80   ; for test only top left pirate is alive
-    ;ld a, $55   ; for test every other pirate is alive
-    ld (asteroidValidBitMap), a
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -784,12 +777,13 @@ endOfUpdateJollyRoger
 
     ret
 
+;;;; TODO this needs changing to multiple asteroids
 checkIfPlayerHit
     ld a, $ff
     ld b, a
-    ld a, (asteroidValidBitMap)
-    cp b
-    jr nz, skipPlayerHit    
+    ;ld a, (asteroidValidBitMap)  ;;;;;;;;;;;;;;;; commented out for now
+    ;cp b
+    ;jr nz, skipPlayerHit    
 
     ld hl, (currentPlayerLocation)
     ld de, 33
@@ -895,7 +889,7 @@ skipCheckBossHit
     ; is shot or not. this is basically all ones except the top bit is zero,
     ; this will get rotated round in the loop and used to and with the asteroidValidBitMap
     ld a, $fe
-    ld (asteroidValidBitMapMaskTemp), a
+    ;ld (asteroidValidBitMapMaskTemp), a
 
     ; this is used to and with the current mask to check if missile collision check is needed
     ld a, $01
@@ -904,12 +898,14 @@ skipCheckBossHit
     ld b, 1
 missileCheckHitLoop
     push bc
-        ;; check if we even need to check this pirate, if not valid then skip
-        ld a, (bitsetMaskAsteroidTemp)
-        ld b, a
-        ld a, (asteroidValidBitMap)
-        and b
-        jr z, noHitMissile
+        ;; check if we even need to check this asteroid, if not valid then skip
+
+;;;; TODO need to change this to multiple asteroid logic
+;        ld a, (bitsetMaskAsteroidTemp)
+;        ld b, a
+;        ld a, (asteroidValidBitMap)
+;        and b
+;        jr z, noHitMissile
 
         ;; ok so we have checked everything ready for finally seeing if missile hit
         ld de, (asteroidRowLeftPositionTemp)
@@ -938,11 +934,38 @@ checkNextPirateMissileHit2
         jr noHitMissile
 MissileHitAsteroid
         ;; missile/cannon HIT!!!
-        ld a, (asteroidValidBitMapMaskTemp)
-        ld b, a
-        ld a, (asteroidValidBitMap)
-        and b
-        ld (asteroidValidBitMap), a
+
+;;; TODO switch off asteroid if hit       
+        ;ld a, (asteroidValidBitMapMaskTemp)
+        ;ld b, a
+        ;ld a, (asteroidValidBitMap)
+        ;and b
+        ;ld (asteroidValidBitMap), a
+
+
+        ;ld hl, asteroidValidMap
+;        ld b, 8                                 
+;checkHitMissileLoop1
+;            ;check if asteroid is valid
+;            ld a, (hl)
+;            inc hl
+;            ld (asteroidValidMapPtr), hl
+;        pop hl
+;        cp 1
+;        jp z, noHitMissile
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         ;also if we have hit then disable the missile now!!
         xor a
@@ -983,10 +1006,10 @@ explosionDelayLoop2
 noHitMissile
         ;; update mask which is the only bit not set we check next
         ;; e.g second pirate is 0x10111111
-        ld a, (asteroidValidBitMapMaskTemp)
+        ;ld a, (asteroidValidBitMapMaskTemp)
         ;rra
         rlc a
-        ld (asteroidValidBitMapMaskTemp),a
+        ;ld (asteroidValidBitMapMaskTemp),a
 
         ;; update the mask which is the bit we're setting set all others z80
         ;; e.g second pirate is 0x01000000
@@ -1696,8 +1719,6 @@ blockFilled    ;8*10
     DB   8,  8,  8,  8,  8,  8,  8,  8
     DB   8,  8,  8,  8,  8,  8,  8,  8
 
-asteroidValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
-    DB 0
 randNextAsteroidPosition
     DB 0
 pirateFiringFlag
@@ -1795,8 +1816,8 @@ playerSpritePointer
 
 asteroidRowLeftPositionTemp
     DW 0
-asteroidValidBitMapMaskTemp
-    DB 0
+;asteroidValidBitMapMaskTemp
+;    DB 0
 bitsetMaskAsteroidTemp
     DB 0
 asteroidSpriteCycleCount
@@ -1839,8 +1860,8 @@ randomSeed
     DW 0
 asteroidTopLeftPositions        ; these are the offsets from Display
     DW 0,0,0,0,0,0,0,0
-asteroidValidBitMapMask         ; valid asteroids "bitmap", we're having 8 asteroids so one bit per astreroid
-    DB 0
+;asteroidValidBitMapMask         ; valid asteroids "bitmap", we're having 8 asteroids so one bit per astreroid
+ ;   DB 0
 
 
 

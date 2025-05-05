@@ -1,13 +1,40 @@
 
-initialiseAsteroidValidAllOn
-    ld a, $ff
-    ld (asteroidValidBitMapMask), a
+initialiseAsteroidValidAllOn       
+    ld b, 8
+    ld hl, asteroidValidMap
+    ld a, 1
+initValidAsteroidLoop
+    ld (hl), a
+    inc hl   
+    djnz initValidAsteroidLoop
     ret
 
 initialiseAValidAlternate
-    ld a, $55
-    ld (asteroidValidBitMapMask), a
+    ld b, 4                     ; set half of the asteroids to on
+    ld hl, asteroidValidMap
+initValidAsteroidLoop2
+    xor a
+    ld (hl), a
+    inc hl
+    ld a, 1
+    ld (hl), a
+    inc hl    
+    djnz initValidAsteroidLoop2
     ret
+
+initialiseFirstAsteroidValid       
+    ld b, 7
+    ld hl, asteroidValidMap
+    ld a, 1
+    ld (hl), a
+    inc hl
+    xor a
+initValidAsteroidLoop3
+    ld (hl), a
+    inc hl   
+    djnz initValidAsteroidLoop3
+    ret
+
 
 initialiseAsteroids    
     ld b, 8
@@ -22,7 +49,7 @@ initAsteroidsLoop
         push hl
             ld hl, Display+1
             add hl, de
-            ld de, 33       ; add an extra 33 to keep it 2 off the top - so blank works
+            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
             add hl, de
             push hl
             pop de
@@ -91,8 +118,9 @@ randLimitComplete
 test_initialiseAsteroids
 
     ;; call the function we're testing
+    call initialiseAsteroidValidAllOn
+    ;call initialiseAValidAlternate
     call initialiseAsteroids
-    call initialiseAValidAlternate
 
     ld b, 4
     ld hl, asteroidTopLeftPositions
@@ -141,41 +169,27 @@ debugPrintAsteroidPos2ndRow
     pop bc
     djnz debugPrintAsteroidPos2ndRow
 
-    ld b, 8    
-    ld de, 364
-    ld a, (asteroidValidBitMapMask)
-    ld c, a
-
-debugAsteroidValidLoop
-    rl c           ; Rotate left through carry
-    push bc
-        jr c, debugAsteroidValidLoopSET  ; If carry is set, bit was 1
-        jr debugAsteroidValidLoopSKIP
-debugAsteroidValidLoopSET:
-        push de
-            push hl
-                ld a, 1
-                call print_number8bits
-            pop hl
-        pop de  
-        jr checkdebugAsteroidValid
-debugAsteroidValidLoopSKIP:
-        push de
-            push hl
-                ld a, 0
-                call print_number8bits
-            pop hl
-        pop de       
-checkdebugAsteroidValid:        
-        inc de  ; move screen write pos on by 3 form start (so there's a space between)
-        inc de
-        inc de
-    pop bc
-    djnz debugAsteroidValidLoop
-
+    call printAsteroidValidStatus
 
 endTestHaltLoop
     jp   endTestHaltLoop 
     ret ; never gets here
 
-
+printAsteroidValidStatus
+    ;; print valid status of each asteroid
+    ld b, 8                                 ; we have 8 asteroids on screen at any one time
+    ld hl, asteroidValidMap
+    ld de, 1
+testValidPrintAsteroidLoop
+    push bc
+    ld a, (hl)
+    push hl        
+        call print_number8bits
+    pop hl    
+    inc hl
+    inc de
+    inc de
+    inc de
+    pop bc
+    djnz testValidPrintAsteroidLoop
+    ret
