@@ -35,6 +35,13 @@ initValidAsteroidLoop3
     djnz initValidAsteroidLoop3
     ret
 
+setFirstPositionForTest
+    ld hl, Display+1
+    ld de, 76              ; this is the third row down same position as missile test
+    add hl, de
+    ld (asteroidTopLeftPositions), hl
+    ret
+
 
 initialiseAsteroids    
     ld b, 8

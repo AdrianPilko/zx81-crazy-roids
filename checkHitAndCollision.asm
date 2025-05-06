@@ -244,9 +244,11 @@ test_checkCollision
     ld (currentPlayerLocation), hl
 
     call initialiseAsteroids
-    call initialiseAsteroidValidAllOn
+    call initialiseFirstAsteroidValid  ; we only need the first asteroid set for this test
     call printAsteroidValidStatus
+    call setFirstPositionForTest      ; set to same as the misile "X" position
 
+    call drawAsteroids
     call fireMissile
 
     ld b, 30                ; loop update missile for more than screen hieght
@@ -262,6 +264,13 @@ waitForTVSyncTestCheckCol
 
         call drawMissileAndBlank
         call updateMissilePosition
+        call updateAsteroidsPositions
+        call drawAsteroids
+        call checkIfMissileHit
+
+        ld de, 695
+        ld bc, (asteroidTopLeftPositions)
+	    call print_number16bits
     pop bc
     djnz testCheckColMissileLoop
 
