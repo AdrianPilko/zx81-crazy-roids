@@ -177,12 +177,13 @@ Line1Text:      DB $ea                        ; REM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;     call test_Missile
+;    call test_checkCollision
 ;    call test_initialiseAsteroids
 ;    call test_UpdateAsteroids
-;     call test_drawAsteroids
-;endTest
-;    jr endTest
+;    call test_drawAsteroids
+endTest
+    jr endTest
 ;;; end of test modes    
 
 
@@ -593,25 +594,9 @@ moveRight
     jp updateRestOfScreen
 
 doFireMissile      ; triggered when jump key pressed just sets the
-    ld a, (MissileInFlightFlag)
-    cp 1
-    jp z, skipLaunchMissile
-    ;; we first need to work out where the missiles should fire from based on current player location
-    ;; unless we're in power up mode then just fires form middle of nose of ship
 
-    ;; in power up mode we'll fire from nose and wing tips :) (note: not yet implemented)
-    ld hl, (currentPlayerLocation)
-    ld de, -33
-    add hl, de
-    ld (currentMissilePosition), hl
-    ;;; setup the missile "Time To Live"  (like ethernet TTL right :)
-    ld a, MISSILE_COUNTDOWN_INIT
-    ld (missileCountDown), a
-    ld a, 1
-    ld (MissileInFlightFlag), a
+    call fireMissile
 
-
-skipLaunchMissile
 updateRestOfScreen
 
     ld hl, (playerSpritePointer)
@@ -623,24 +608,9 @@ updateRestOfScreen
     ld a, (MissileInFlightFlag)
     cp 0
     jp z, skipMissileDraw
-
-    ld hl, (currentMissilePosition)
-    ld de, 33
-    add hl, de
-    ex de, hl
-    ld hl, blankSprite
-    ld c, 4
-    ld b, 4
-    call drawSprite
-
-    ld hl, missileData
-    ld de, (currentMissilePosition)
-    ld c, 4
-    ld b, 4
-    call drawSprite
-
+    
+    call drawMissileAndBlank
     call checkIfMissileHit
-
     call updateMissilePosition
 skipMissileDraw
 
@@ -662,26 +632,8 @@ skipMissileDraw
 include initAsteroids.asm
 include updateAsteroids.asm
 include drawAsteroids.asm
-
-updateMissilePosition
-      ld a, (missileCountDown)
-      dec a
-      cp 0
-      jp z, noMissileUpClearMissile
-
-      ld (missileCountDown), a
-
-      ld hl, (currentMissilePosition)
-      ld de, -33
-      add hl, de
-      ld (currentMissilePosition), hl
-      jr noMissileUpdate
-noMissileUpClearMissile
-      xor a
-      ld (MissileInFlightFlag), a
-noMissileUpdate
-      ret
-
+include checkHitAndCollision.asm
+include missile.asm
 
 ;updatePirateXPos
 ;    ld a, (pirateXPos)
@@ -792,254 +744,6 @@ checkIfPlayerHit
     sbc hl, de
     call z, executeRestartLevel
 skipPlayerHit
-    ret
-
-;; check if missile hit piratasteroids
-
-
-checkIfMissileHit
-;;;; check if missile UFO, if the UFO is valid
-    ld a, (UFOValid)
-    cp 0
-    jr z, skipCheckUFOHit
-    ld de, (currentMissilePosition)
-    ld hl, (sharkAbsoluteScreenPos)
-    sbc hl, de
-    ld a, h
-    cp 0
-    jp nz, skipCheckUFOHit
-    ld a, l
-    cp 0
-    jp nz, skipCheckUFOHit
-
-    ; UFO hit
-    xor a
-    ld (UFOValid), a
-    ld b, 10
-increaseScoreSharkHitLoop
-    push bc
-    call increaseScore
-    pop bc
-    djnz increaseScoreSharkHitLoop
-
-
-skipCheckUFOHit
-    ld a, (bossLevelFlag)
-    cp 0
-    jr z, skipCheckBossHit
-
-    ; code for jolly roger hit detect
-
-    ld de, (bossSpriteLocation)
-    ld hl, 36
-    add hl, de
-    ex de, hl
-    ld hl, (currentMissilePosition)
-
-    ; now compare upper and lower bytes of hl and de
-    ld a, h
-    cp d
-    jr z, checkNextRegMissileHit
-    jr noHitMissileBoss
-checkNextRegMissileHit
-    ld a, l
-    cp e
-    jr z, MissileHitBoss
-    inc hl
-    ld a, h
-    cp d
-    jr z, checkNextRegMissileHit2
-    jr noHitMissileBoss
-checkNextRegMissileHit2
-    ld a, l
-    cp e
-    jr z, MissileHitBoss
-
-    jr noHitMissileBoss
-MissileHitBoss
-    xor a
-    ld (bossLevelFlag), a
-    ld b, 100
-incScoreBossHitLoop
-    push bc
-       call increaseScore
-    pop bc
-    djnz incScoreBossHitLoop
-    ld a, 1
-    ld (goNextLevelFlag), a
-    xor a
-    ld (bossLevelFlag),a
-    call resetJollyRogerPos
-
-    ret
-noHitMissileBoss
-    ret
-
-skipCheckBossHit
-    ld hl, (asteroidTopLeftPositions)
-
-    ld (asteroidRowLeftPositionTemp), hl
-    ;becasue the whole loop is setup to count down, and because we want to check the
-    ; lower row first we need to move the "Tope left position to be the bottom right
-;;    ld de, 177
-;;    add hl, de
-    ;ld (asteroidRowLeftPositionTemp), hl  ; this now has bottom right pirate
-
-    ; setup a moving bit mask which we'll use to determine if the pirate
-    ; is shot or not. this is basically all ones except the top bit is zero,
-    ; this will get rotated round in the loop and used to and with the asteroidValidBitMap
-    ld a, $fe
-    ;ld (asteroidValidBitMapMaskTemp), a
-
-    ; this is used to and with the current mask to check if missile collision check is needed
-    ld a, $01
-    ld (bitsetMaskAsteroidTemp), a
-   ; ld b, 8
-    ld b, 1
-missileCheckHitLoop
-    push bc
-        ;; check if we even need to check this asteroid, if not valid then skip
-
-;;;; TODO need to change this to multiple asteroid logic
-;        ld a, (bitsetMaskAsteroidTemp)
-;        ld b, a
-;        ld a, (asteroidValidBitMap)
-;        and b
-;        jr z, noHitMissile
-
-        ;; ok so we have checked everything ready for finally seeing if missile hit
-        ld de, (asteroidRowLeftPositionTemp)
-        ld hl, (currentMissilePosition)
-        ; compare upper and lower bytes of hl and de
-        ld a, h
-        cp d
-        jr z, checkNextPirateMissileHit
-        jr noHitMissile
-checkNextPirateMissileHit
-        ld a, l
-        cp e
-        jr z, MissileHitAsteroid
-        ; check next position along (makes game better to play)
-        inc hl
-        ; compare upper and lower bytes of hl and de
-        ld a, h
-        cp d
-        jr z, checkNextPirateMissileHit2
-        jr noHitMissile
-checkNextPirateMissileHit2
-        ld a, l
-        cp e
-        jr z, MissileHitAsteroid
-
-        jr noHitMissile
-MissileHitAsteroid
-        ;; missile/cannon HIT!!!
-
-;;; TODO switch off asteroid if hit       
-        ;ld a, (asteroidValidBitMapMaskTemp)
-        ;ld b, a
-        ;ld a, (asteroidValidBitMap)
-        ;and b
-        ;ld (asteroidValidBitMap), a
-
-
-        ;ld hl, asteroidValidMap
-;        ld b, 8                                 
-;checkHitMissileLoop1
-;            ;check if asteroid is valid
-;            ld a, (hl)
-;            inc hl
-;            ld (asteroidValidMapPtr), hl
-;        pop hl
-;        cp 1
-;        jp z, noHitMissile
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        ;also if we have hit then disable the missile now!!
-        xor a
-        ld (MissileInFlightFlag), a
-        ld hl, 0
-        ld (currentMissilePosition), hl
-        call increaseScore
-        pop bc   ; have to do this becasue we're exiting early out of loop
-
-        ;; let's draw an explosion and tombstone breifly
-        ld b, 3
-        ld hl, explsion4x4
-explosionDrawLoop
-        push bc
-            push hl
-                ld de, (asteroidRowLeftPositionTemp)
-                ld c, 4
-                ld b, 4
-                call drawSprite
-                ld b, 32
-explosionDelayLoop
-                push bc
-                ld b, 64
-explosionDelayLoop2
-
-                    djnz explosionDelayLoop2
-
-                pop bc
-                djnz explosionDelayLoop
-            pop hl
-            ld de, 16
-            add hl, de
-        pop bc
-        djnz explosionDrawLoop
-
-
-        ret ;; exit early
-noHitMissile
-        ;; update mask which is the only bit not set we check next
-        ;; e.g second pirate is 0x10111111
-        ;ld a, (asteroidValidBitMapMaskTemp)
-        ;rra
-        rlc a
-        ;ld (asteroidValidBitMapMaskTemp),a
-
-        ;; update the mask which is the bit we're setting set all others z80
-        ;; e.g second pirate is 0x01000000
-        ld a, (bitsetMaskAsteroidTemp)
-        ;rra
-        rlc a
-        ld (bitsetMaskAsteroidTemp), a
-
-        ; now move the position to compare (ie a pirate)
-        ld de, -4
-        ld hl, (asteroidRowLeftPositionTemp)
-        add hl, de
-        ld (asteroidRowLeftPositionTemp), hl
-    pop bc
-        ld a, b  ; check the loop counter, if it's 3 then move the whole lot down by +33-16
-        cp 5
-        jr nz, endLoopLabelPriateCheck
-        ld de, -149
-
-        add hl, de
-        ld (asteroidRowLeftPositionTemp), hl
-
-endLoopLabelPriateCheck
-
-    ;djnz missileCheckHitLoop
-    ld a, b
-    dec a
-    ld b, a
-    cp 0
-    jp nz, missileCheckHitLoop
     ret
 
 
