@@ -174,10 +174,13 @@ Line1Text:      DB $ea                        ; REM
 ;; in test mode comment out jp intro_title and comment in the test calls
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	jp intro_title		; main entry point
+;	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;     call test_Missile
-;    call test_checkCollision
+
+    call test_checkCollisionMulti
+
+;    call test_checkCollision_One
 ;    call test_initialiseAsteroids
 ;    call test_UpdateAsteroids
 ;    call test_drawAsteroids
