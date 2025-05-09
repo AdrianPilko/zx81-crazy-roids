@@ -29,7 +29,6 @@ checkHitLoop
         push hl
             push de
             pop hl 
-            ;ld de, (asteroidTopLeftPositions)
             ld hl, (currentMissilePosition)
             ; compare upper and lower bytes of hl and de
             ld a, h
@@ -50,8 +49,6 @@ MissileHitAsteroid
             ;also if we have hit then disable the missile now!!
             xor a
             ld (MissileInFlightFlag), a
-            ld hl, 0
-            ld (currentMissilePosition), hl
         
             ;; let's draw an explosion
             ld b, 5
@@ -59,7 +56,7 @@ MissileHitAsteroid
 explosionDrawLoop
             push bc
                 push hl
-                    ld de, (asteroidTopLeftPositions)
+                    ld de, (currentMissilePosition)
                     ld c, 4
                     ld b, 4
                     call drawSprite
