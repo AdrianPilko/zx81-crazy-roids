@@ -76,11 +76,52 @@ resetAsteroidSprite
             ld (asteroidSpritePointer), hl    
 skipUpdateAsteroidSpritePtr
         pop hl
+        jp endDrawAstLoop
 skipDrawAsteroid
+    push hl
+        ;; call subroutine to reset this asteroid, uses dec hl, dec hl to skip back
+        call resetAsteroid_HL
+    pop hl
+endDrawAstLoop
     pop bc 
     djnz drawAsteroidLoop
 
     ret   
+
+
+
+resetAsteroid_HL
+    dec hl
+    dec hl ;; this moves hl back to proper place for the current asteroid
+
+    push hl
+        call randAsteroidLocation   
+    pop hl
+    ld d, 0
+    ld e, a
+    push hl
+        ld hl, Display+1
+        add hl, de
+        ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
+        add hl, de
+        push hl
+        pop de
+    pop hl
+
+    ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+    ld (hl), a
+    ld a, d
+    inc hl
+    ld (hl), a
+    inc hl          ; move to next asteroid location from asteroidTopLeftPositions
+    
+
+    ;set this asteroid is valid
+    ld hl, (asteroidValidMapPtr)
+    dec hl   ; move back one as other code had inc'd this
+    ld a, 1
+    ld (hl), a
+    ret
 
 
 testAsteroidText_done

@@ -122,7 +122,7 @@ test_checkCollisionMulti
     call drawAsteroids
     call fireMissile
 
-    ld b, 30                ; loop update missile for more than screen hieght
+    ld b, $ff                ; loop update missile for more than screen hieght
                             ; this tests that it stops at top  
 testCheckColMissileLoop1
     push bc
@@ -137,13 +137,21 @@ waitForTVSyncTestCheckCol1
         call updateMissilePosition
         call updateAsteroidsPositions
         call drawAsteroids
+        call printAsteroidValidStatus
         call checkIfMissileHit
         ; if a == 2
         cp 2
-        pop bc   ; pop bc so it doesn't cause crash when breaking out early
-        jr z, testCheckCollisionDone             
-        push bc
-
+        ;pop bc   ; pop bc so it doesn't cause crash when breaking out early
+        ;jr z, testCheckCollisionDone
+        jr z, fireMissileAgain
+        ld a, (MissileInFlightFlag)
+        cp 1
+        jr nz, fireMissileAgain
+        jr skipfireMissileAgain
+fireMissileAgain
+        call fireMissile                     
+        ;push bc
+skipfireMissileAgain
         ld de, 695
         ld bc, (asteroidTopLeftPositions)
 	    call print_number16bits

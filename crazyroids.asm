@@ -174,7 +174,7 @@ Line1Text:      DB $ea                        ; REM
 ;; in test mode comment out jp intro_title and comment in the test calls
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;	jp intro_title		; main entry point
+	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;     call test_Missile
 

@@ -65,22 +65,8 @@ continueUpdateAsteroid
         inc hl
         jp endLoopUpdateAsteroids
 resetUpdateAsteroid
-
-        ;push hl
-        ;    push de
-        ;    push bc
-        ;    push af
-        ;
-        ;    ld bc,68
-        ;    ld de,resetAsteroidText
-        ;    call printstring
-       ; 
-       ;     pop af
-       ;     pop bc
-       ;     pop de
-       ; pop hl
-
     push hl
+        ;; we need to make sure asteroids are at unique positions
         call randAsteroidLocation
         ; a now contains the random pos, need to get it in de
         ld a, (randNextAsteroidPosition)
