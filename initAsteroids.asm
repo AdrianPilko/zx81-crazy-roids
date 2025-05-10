@@ -1,4 +1,15 @@
 
+initialise_3_AsteroidValid
+      
+    ld b, 3
+    ld hl, asteroidValidMap
+    ld a, 1
+initValid3AsteroidLoop
+    ld (hl), a
+    inc hl   
+    djnz initValid3AsteroidLoop
+    ret
+
 initialiseAsteroidValidAllOn       
     ld b, 8
     ld hl, asteroidValidMap
@@ -44,7 +55,7 @@ setFirstPositionForTest
 
 
 initialiseAsteroids    
-    ld b, 8
+    ld b, 8    ; but only enable 3 - helps with the random placing horizontally
     ld hl, asteroidTopLeftPositions
 initAsteroidsLoop
     push bc

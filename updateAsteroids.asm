@@ -7,7 +7,7 @@ resetAsteroidText
     db _R,_E,_S,_E,_T,$ff
 
 updateAsteroidsPositions
-    ld b, 8                                 ; we have 8 asteroids on screen at any one time
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS                                 ; we have 8 asteroids on screen at any one time
     ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
 
 updateAsteroidLoop
@@ -89,11 +89,7 @@ resetUpdateAsteroid
     ld a, d
     ld (hl), a
     inc hl
-
-    ;; need to reset the asteroid if it's been hit
-
-    ;;;;;;;;;; TODO
-
+    
 endLoopUpdateAsteroids
     pop bc
     djnz updateAsteroidLoop

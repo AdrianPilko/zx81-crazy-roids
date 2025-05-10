@@ -44,6 +44,8 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 6
+
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
 SCREEN_WIDTH EQU 32
@@ -55,7 +57,7 @@ ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 1
 
-VSYNCLOOP       EQU      1
+VSYNCLOOP       EQU      2
 
 ; character set definition/helpers
 __:				EQU	$00	;spacja
@@ -178,7 +180,7 @@ Line1Text:      DB $ea                        ; REM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;     call test_Missile
 
-    call test_checkCollisionMulti
+     call test_checkCollisionMulti
 
 ;    call test_checkCollision_One
 ;    call test_initialiseAsteroids
@@ -379,7 +381,9 @@ initVariables
     ld a, (score_mem_hund)
     ld (last_score_mem_hund),a
 
-    call initialiseAsteroidValidAllOn
+    ;call initialiseAsteroidValidAllOn
+    ;call initialise_3_AsteroidValid
+    call initialiseFirstAsteroidValid
     call initialiseAsteroids
 
     ;;ld hl, $00 
@@ -429,13 +433,6 @@ resetEvenOddAndSetFlag
 
 continueWithGameLoop
 
-
-    ld a, (goNextLevelFlag)
-    cp 1
-    call z, executeNextLevelStart
-    xor a
-    ld (goNextLevelFlag), a
-
     ld a, (restartLevelFlag)
     cp 1
     call z, executeRestartLevel
@@ -459,47 +456,16 @@ continueWithGameLoop
 
     ld a, (UFOValid)
     cp 1
-    call z, drawSharkBonus
+    call z, drawUFOBonus
 
 skipUFOInGameLoop
-    ;call randAsteroidLocation   ; this sets randNextAsteroidPosition
-
-    ;ld a, (bossLevelFlag)
-    ;cp 0
-    ;call z, drawAsteroid
     call drawAsteroids
-
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
     ld c, 4
     ld b, 4
     call drawSprite
-
-
-    ld a, (bossLevelFlag)
-    cp 0
-    jp z, noJollyRogerDraw
-    ld hl, blankSprite
-    ld de, (previousbossSpriteLocation)
-    ld c, 8
-    ld b, 8
-    call drawSprite
-
-    call updateJollyRoger
-    ld hl, jollyRoger
-    ld de, (bossSpriteLocation)
-    ld c, 8
-    ld b, 8
-    call drawSprite
-
-noJollyRogerDraw
-
     call printLivesAndScore
-
-    ;call blankEnemySprites
-    ;call drawEnemySprites
-    ;call updateEnemySpritePositions
-
 
 ; keyboard layout for reading keys on ZX81
 ; BIT   left block      right block  BIT
@@ -596,7 +562,6 @@ moveRight
     jp updateRestOfScreen
 
 doFireMissile      ; triggered when jump key pressed just sets the
-
     call fireMissile
 
 updateRestOfScreen
@@ -612,10 +577,10 @@ updateRestOfScreen
     jp z, skipMissileDraw
     
     call drawMissileAndBlank
-    call checkIfMissileHit
     call updateMissilePosition
+    ;call checkIfMissileHit
+    call checkIfMissileHit_FAST
 skipMissileDraw
-
     call checkIfPlayerHit
     jp gameLoop
 
@@ -733,19 +698,49 @@ endOfUpdateJollyRoger
 
 ;;;; TODO this needs changing to multiple asteroids
 checkIfPlayerHit
-    ld a, $ff
-    ld b, a
-    ;ld a, (asteroidValidBitMap)  ;;;;;;;;;;;;;;;; commented out for now
-    ;cp b
-    ;jr nz, skipPlayerHit    
 
-    ld hl, (currentPlayerLocation)
-    ld de, 33
-    sbc hl, de
-    ld de, (asteroidTopLeftPositions)
-    sbc hl, de
-    call z, executeRestartLevel
+    ld hl, asteroidValidMap
+    ld (asteroidValidMapPtr), hl
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS       ; we have TOTAL_NUMBER_OF_ASTEROIDS asteroids on screen at any one time
+    ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
+
+checkIfPlayerHitLoop
+    push bc
+        ld a, (hl)
+        ld e, a
+        inc hl
+        ld a, (hl)
+        ld d, a
+        inc hl
+        ld (asteroidPosTemp), de
+
+        push hl
+            ;check if asteroid is valid
+            ld hl, (asteroidValidMapPtr)
+            ld a, (hl)
+        pop hl
+        cp 0
+        jp z, skipPlayerHit
+
+        push hl
+            ld hl, (currentPlayerLocation)
+            ld de, 33
+            sbc hl, de
+
+            ld de, (asteroidPosTemp)
+            sbc hl, de
+            push af
+                call z, executeRestartLevel
+            pop af
+        pop hl
+        jr z, checkIfPlayerHitEndEarly
 skipPlayerHit
+    pop bc
+    djnz checkIfPlayerHitLoop
+    jr endOfcheckIfPlayerHit
+checkIfPlayerHitEndEarly
+    pop bc  ; pop here as we exited loop early
+endOfcheckIfPlayerHit
     ret
 
 
@@ -931,7 +926,7 @@ continueGampLoop
 checkForSharkHit
     ret
 
-drawSharkBonus
+drawUFOBonus
 
 ;debugBackOne
 ;   jp debugBackOne
@@ -987,7 +982,7 @@ continueDrawShark
     ld c, 8
     ld b, 4
     call drawSprite
-    jr endDrawSharkBonus
+    jr endDrawUFOBonus
 noDrawSharkAndSetInvalid
     xor a
     ld (UFOValid), a
@@ -1005,7 +1000,7 @@ noDrawSharkAndSetInvalid
     ld c, 8
     ld b, 4
     call drawSprite
-endDrawSharkBonus
+endDrawUFOBonus
     ret
 
 resetJollyRogerPos
@@ -1475,6 +1470,8 @@ enemySprite4by4BlankPointer
 YSpeed
     DB 0
 currentPlayerLocation
+    DW 0
+asteroidPosTemp
     DW 0
 MissileInFlightFlag
     DB 0

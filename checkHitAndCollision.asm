@@ -1,13 +1,132 @@
 ; check if missile hit asteroids or hit UFO or other
 
-
-testDEBUGText
+tempFindAsteroidIndex
+    db 0
+testDEBUGText_HIT
     db _H,_I,_T,__,__,$ff
+testDEBUGText_NOTHIT
+    db _N,_O,_T,__,_H,_I,_T,$ff
+
+checkIfMissileHit_FAST    ; prototype, instead of checking all the positions just 
+                          ; check if ahead of missile is not blank
+    ld hl, (currentMissilePosition)
+    ld de, -33
+    add hl, de
+    ld a, (hl)
+    cp 0
+    jp nz, fastHit
+    xor a
+    jp fastHitDone
+fastHit
+    xor a
+    ld (MissileInFlightFlag), a
+    ld (tempFindAsteroidIndex), a
+
+    ;; work out which asteroid was hit
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS
+    ld hl, asteroidTopLeftPositions
+    
+fastHitCheckLoop
+    push bc
+        push hl
+            ld de, (currentMissilePosition)
+            sbc hl, de
+            jr nz, fastHitFoundAsteroid
+            jr fastHitNotFoundAsteroid
+fastHitFoundAsteroid
+        pop hl
+        pop bc
+
+        ;; we can use the loop count in bc to skip to the
+        ;; place in asteroidValidBitMap
+
+        ld hl, asteroidValidMap 
+        ld a, (tempFindAsteroidIndex)
+        ld b, a
+        cp 0
+        jr z, skipasteroidIndexLoop
+asteroidIndexLoop
+        inc hl
+        djnz asteroidIndexLoop
+skipasteroidIndexLoop
+        xor a
+        ld (hl), a
+ ;       ld bc,620
+ ;       ld de, testDEBUGText_HIT
+ ;       call printstring  
+ ;       call printAsteroidValidStatus       
+
+ ;       ld a,(tempFindAsteroidIndex)
+ ;       ld de, 760
+ ;       call print_number8bits
+
+;stopLoopHere
+;        jr stopLoopHere
+
+        jr drawExplosionPreLoop
+fastHitNotFoundAsteroid
+        inc hl     ; push hl onto the next asteroid position
+        inc hl
+        pop hl 
+    pop bc
+    ld a, (tempFindAsteroidIndex)
+    inc a 
+    ld (tempFindAsteroidIndex), a
+
+    djnz fastHitCheckLoop
+
+drawExplosionPreLoop
+    ;; draw an explosion
+    ld b, 5
+    ld hl, explsion4x4
+explosionDrawLoop_FAST
+    push bc
+        push hl
+            push hl
+                ld hl, (currentMissilePosition)
+                ld de, -33
+                add hl, de
+                push hl 
+                pop de
+            pop hl     ; hl is should now be back to the sprite data    
+            ;ld de, (currentMissilePosition)
+            ld c, 4
+            ld b, 4
+            call drawSprite
+            ld b, 64
+explosionDelayLoop_FAST
+            push bc
+            ld b, 64
+explosionDelayLoop2_FAST
+                djnz explosionDelayLoop2_FAST
+            pop bc
+            djnz explosionDelayLoop_FAST
+        pop hl
+        ld de, 16
+        add hl, de
+    pop bc
+    djnz explosionDrawLoop_FAST            
+
+    ld de, (currentMissilePosition)
+    ld hl, -33
+    add hl, de
+    ex de, hl
+    ld hl, blankSprite
+    ld c, 4
+    ld b, 4
+    call drawSprite
+    
+    call increaseScore 
+
+    ld a, 2
+fastHitDone
+    ret
+
 
 checkIfMissileHit
     ld hl, asteroidValidMap
     ld (asteroidValidMapPtr), hl
-    ld bc, 8
+    ld bc, TOTAL_NUMBER_OF_ASTEROIDS
     ld hl, asteroidTopLeftPositions
 checkHitLoop 
     push bc
@@ -43,14 +162,15 @@ checkNextMissileHit
 
 MissileHitAsteroid
             ;; missile HIT!!!
-            xor a       
-            ld (asteroidValidMap), a
+            ld hl, (asteroidValidMapPtr)
+            ld a, 0
+            ld (hl), a   
 
             ;also if we have hit then disable the missile now!!
             xor a
             ld (MissileInFlightFlag), a
         
-            ;; let's draw an explosion
+            ;; draw an explosion
             ld b, 5
             ld hl, explsion4x4
 explosionDrawLoop
@@ -63,7 +183,7 @@ explosionDrawLoop
                     ld b, 32
 explosionDelayLoop
                     push bc
-                    ld b, 64
+                    ld b, 32
 explosionDelayLoop2
                         djnz explosionDelayLoop2
                     pop bc
@@ -72,33 +192,27 @@ explosionDelayLoop2
                 ld de, 16
                 add hl, de
             pop bc
-            djnz explosionDrawLoop
-
-            ;; set this asteroid to not valid
-            xor a
-            ld hl, (asteroidValidMapPtr)
-            ld (hl), a
-            
-            ld bc,695
-            ld de, testDEBUGText
-            call printstring
+            djnz explosionDrawLoop            
             call increaseScore    
-        pop hl ; we only have 0one missile at once, and so once one hits break loop early
+            ;ld bc,653
+            ;ld de, testDEBUGText_HIT
+            ;call printstring    
+        pop hl ; we only have one missile at once, and so once one hits break loop early
         pop bc ; so restore stack to pre call state and jump end
-        ld a, b 
-        ld de, 672
-        call print_number8bits
         ld a, 2
         jr exitLoopEarlyCheckCollision
 noHitMissile
             ; increment asteroid valid temp "pointer"
             ld hl, (asteroidValidMapPtr)
-            inc hl
+            ;inc hl
             ld (asteroidValidMapPtr), hl
         pop hl      ; restore hl now is next asteroid position
     pop bc 
     djnz checkHitLoop
 exitLoopEarlyCheckCollision
+    ;ld bc,620
+    ;ld de, testDEBUGText_NOTHIT
+    ;call printstring        
     ret
 
 
@@ -124,7 +238,7 @@ test_checkCollisionMulti
 testCheckColMissileLoop1
     push bc
         push af
-	        ld b,10
+	        ld b,4
 waitForTVSyncTestCheckCol1
 	        call vsync
 	        djnz waitForTVSyncTestCheckCol1
@@ -135,7 +249,7 @@ waitForTVSyncTestCheckCol1
         call updateAsteroidsPositions
         call drawAsteroids
         call printAsteroidValidStatus
-        call checkIfMissileHit
+        call checkIfMissileHit_FAST
         ; if a == 2
         cp 2
         ;pop bc   ; pop bc so it doesn't cause crash when breaking out early
@@ -146,6 +260,7 @@ waitForTVSyncTestCheckCol1
         jr nz, fireMissileAgain
         jr skipfireMissileAgain
 fireMissileAgain
+        call printAsteroidValidStatus
         call fireMissile                     
         ;push bc
 skipfireMissileAgain
@@ -182,7 +297,7 @@ test_checkCollision_One
 testCheckColMissileLoop2
     push bc
         push af
-	        ld b,10
+	        ld b,2
 waitForTVSyncTestCheckCol2
 	        call vsync
 	        djnz waitForTVSyncTestCheckCol2
@@ -192,7 +307,7 @@ waitForTVSyncTestCheckCol2
         call updateMissilePosition
         call updateAsteroidsPositions
         call drawAsteroids
-        call checkIfMissileHit
+        call checkIfMissileHit_FAST
         ; if a == 2
         cp 2
         pop bc   ; pop bc so it doesn't cause crash when breaking out early
