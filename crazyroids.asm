@@ -44,7 +44,7 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 6
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 3
 
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
@@ -577,8 +577,7 @@ updateRestOfScreen
     jp z, skipMissileDraw
     
     call drawMissileAndBlank
-    call updateMissilePosition
-    ;call checkIfMissileHit
+    call updateMissilePosition    
     call checkIfMissileHit_FAST
 skipMissileDraw
     call checkIfPlayerHit
@@ -601,6 +600,7 @@ include updateAsteroids.asm
 include drawAsteroids.asm
 include checkHitAndCollision.asm
 include missile.asm
+include player.asm
 
 ;updatePirateXPos
 ;    ld a, (pirateXPos)
@@ -695,54 +695,6 @@ endOfUpdateJollyRoger
     ld (jollyRogerXPos), a
 
     ret
-
-;;;; TODO this needs changing to multiple asteroids
-checkIfPlayerHit
-
-    ld hl, asteroidValidMap
-    ld (asteroidValidMapPtr), hl
-    ld b, TOTAL_NUMBER_OF_ASTEROIDS       ; we have TOTAL_NUMBER_OF_ASTEROIDS asteroids on screen at any one time
-    ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
-
-checkIfPlayerHitLoop
-    push bc
-        ld a, (hl)
-        ld e, a
-        inc hl
-        ld a, (hl)
-        ld d, a
-        inc hl
-        ld (asteroidPosTemp), de
-
-        push hl
-            ;check if asteroid is valid
-            ld hl, (asteroidValidMapPtr)
-            ld a, (hl)
-        pop hl
-        cp 0
-        jp z, skipPlayerHit
-
-        push hl
-            ld hl, (currentPlayerLocation)
-            ld de, 33
-            sbc hl, de
-
-            ld de, (asteroidPosTemp)
-            sbc hl, de
-            push af
-                call z, executeRestartLevel
-            pop af
-        pop hl
-        jr z, checkIfPlayerHitEndEarly
-skipPlayerHit
-    pop bc
-    djnz checkIfPlayerHitLoop
-    jr endOfcheckIfPlayerHit
-checkIfPlayerHitEndEarly
-    pop bc  ; pop here as we exited loop early
-endOfcheckIfPlayerHit
-    ret
-
 
 executeRestartLevel
     xor a

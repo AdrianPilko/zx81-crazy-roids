@@ -1,4 +1,37 @@
-; check if missile hit asteroids or hit UFO or other
+; Copyright (c) 2025 Adrian Pilkington
+
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated documentation files (the "Software"), to deal
+; in the Software without restriction, including without limitation the rights
+; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+; copies of the Software, and to permit persons to whom the Software is
+; furnished to do so, subject to the following conditions:
+
+; The above copyright notice and this permission notice shall be included in all
+; copies or substantial portions of the Software.
+
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+; SOFTWARE.
+
+;;; Classic shootem up game like asteroids, but more crazy
+;;;
+;;; https://youtube.com/@byteforever7829
+
+
+;; FILE PURPOSE
+;; ============
+;;    - Subroutines related to collisions with missile and asteroids
+;;
+;; TODO LIST
+;; =========
+;;   - in the fast hit detection need to make sure it doesn't check the top row of screen
+;;     as that's where the game info's displayed
+
 
 tempFindAsteroidIndex
     db 0
@@ -243,13 +276,14 @@ waitForTVSyncTestCheckCol1
 	        call vsync
 	        djnz waitForTVSyncTestCheckCol1
         pop af
-
-        call drawMissileAndBlank
-        call updateMissilePosition
-        call updateAsteroidsPositions
         call drawAsteroids
-        call printAsteroidValidStatus
+        call drawMissileAndBlank
         call checkIfMissileHit_FAST
+        call updateMissilePosition
+        call checkIfMissileHit_FAST
+        call updateAsteroidsPositions        
+        call printAsteroidValidStatus
+        
         ; if a == 2
         cp 2
         ;pop bc   ; pop bc so it doesn't cause crash when breaking out early
