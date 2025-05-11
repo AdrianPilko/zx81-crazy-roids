@@ -44,7 +44,7 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 3
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 8
 
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
@@ -55,7 +55,7 @@ PLAYER_START_POS EQU 637
 PLAYER_LIVES EQU 3
 ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
-LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 1
+LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 2
 
 VSYNCLOOP       EQU      2
 
@@ -180,7 +180,8 @@ Line1Text:      DB $ea                        ; REM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;     call test_Missile
 
-     call test_checkCollisionMulti
+;     call test_checkCollisionMulti
+     call test_checkCollisionAtTopRow
 
 ;    call test_checkCollision_One
 ;    call test_initialiseAsteroids
@@ -444,19 +445,19 @@ continueWithGameLoop
     jp z, intro_title
 
 
-    ld a, (evenOddLoopFlag)
-    cp 0
-    jr z, skipUFOInGameLoop
+    ;ld a, (evenOddLoopFlag)
+    ;cp 0
+    ;jr z, skipUFOInGameLoop
 
-    call asteroidUFOCountUp
+    ;call asteroidUFOCountUp
     
-    ld a, (evenOddLoopFlag)
-    cp 1
-    call z, updateAsteroidsPositions
+    ;ld a, (evenOddLoopFlag)
+    ;cp 1
+    ;call z, updateAsteroidsPositions
 
-    ld a, (UFOValid)
-    cp 1
-    call z, drawUFOBonus
+    ;ld a, (UFOValid)
+    ;cp 1
+    ;call z, drawUFOBonus
 
 skipUFOInGameLoop
     call drawAsteroids
@@ -559,7 +560,7 @@ moveRight
     bit 1, a						    ; Z
     jp z, doFireMissile
 
-    jp updateRestOfScreen
+    jr updateRestOfScreen
 
 doFireMissile      ; triggered when jump key pressed just sets the
     call fireMissile
@@ -577,10 +578,12 @@ updateRestOfScreen
     jp z, skipMissileDraw
     
     call drawMissileAndBlank
-    call updateMissilePosition    
     call checkIfMissileHit_FAST
+    call updateMissilePosition
+    call checkIfMissileHit_FAST      
 skipMissileDraw
     call checkIfPlayerHit
+    call updateAsteroidsPositions 
     jp gameLoop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1544,7 +1547,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_5,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_3,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_4,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 

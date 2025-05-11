@@ -42,13 +42,28 @@ testDEBUGText_NOTHIT
 
 checkIfMissileHit_FAST    ; prototype, instead of checking all the positions just 
                           ; check if ahead of missile is not blank
+
+
+    ;; check if missile is near top of screen, we don't want to get score if
+    ;; it hits the top!    
+    ld hl, Display+99
+    ld de, (currentMissilePosition)
+    sbc hl, de
+    jp nc, missileNearTopSkipAll
+
+    ;; we're checking for anything centred in next row up, so -32, -31 (not -33)
     ld hl, (currentMissilePosition)
-    ld de, -33
+    ld de, -32                     
     add hl, de
     ld a, (hl)
     cp 0
     jp nz, fastHit
+    inc hl          ; no need todo the "add" again, just inc by 1
+    ld a, (hl)
+    cp 0
+    jp nz, fastHit
     xor a
+
     jp fastHitDone
 fastHit
     xor a
@@ -117,7 +132,7 @@ explosionDrawLoop_FAST
         push hl
             push hl
                 ld hl, (currentMissilePosition)
-                ld de, -33
+                ld de, -66
                 add hl, de
                 push hl 
                 pop de
@@ -141,18 +156,19 @@ explosionDelayLoop2_FAST
     djnz explosionDrawLoop_FAST            
 
     ld de, (currentMissilePosition)
-    ld hl, -33
+    ld hl, -99
     add hl, de
     ex de, hl
     ld hl, blankSprite
     ld c, 4
-    ld b, 4
+    ld b, 8
     call drawSprite
     
     call increaseScore 
 
     ld a, 2
 fastHitDone
+missileNearTopSkipAll
     ret
 
 
@@ -311,6 +327,69 @@ testCheckCollisionDone
     ret
 
 
+test_checkCollisionAtTopRow
+    ld hl, Display+1
+    ld de, PLAYER_START_POS
+    add hl, de
+    ld (currentPlayerLocation), hl
+
+    call initialiseAsteroids
+    call initialiseAsteroidValidAllOn 
+    call printAsteroidValidStatus
+    call setFirstPositionForTest      ; set to same as the misile "X" position
+
+    call drawAsteroids
+    call fireMissile
+
+    ld b, $ff                ; loop update missile for more than screen hieght
+                            ; this tests that it stops at top  
+testCheckColMissileLoopTop1
+    push bc
+        push af
+	        ld b,4
+waitForTVSyncTestCheckColTop1
+	        call vsync
+	        djnz waitForTVSyncTestCheckColTop1
+        pop af
+        call drawAsteroids
+        call drawMissileAndBlank
+        call checkIfMissileHit_FAST
+        call updateMissilePosition
+        call checkIfMissileHit_FAST
+        ;call updateAsteroidsPositions        ;;; in this mode keep asteroid on top row
+        call printAsteroidValidStatus
+        
+        ; if a == 2
+        cp 2
+        ;pop bc   ; pop bc so it doesn't cause crash when breaking out early
+        ;jr z, testCheckCollisionDone
+        jr z, fireMissileAgainTop
+        ld a, (MissileInFlightFlag)
+        cp 1
+        jr nz, fireMissileAgain
+        jr skipfireMissileAgainTop
+fireMissileAgainTop
+        call printAsteroidValidStatus
+        call fireMissile                     
+        ;push bc
+skipfireMissileAgainTop
+        ld de, 695
+        ld bc, (asteroidTopLeftPositions)
+	    call print_number16bits
+    pop bc
+    djnz testCheckColMissileLoopTop1
+testCheckCollisionDoneTop
+    call printAsteroidValidStatus
+    ld bc,728
+    ld de,testCollisionText_done
+    call printstring
+    ret
+
+
+
+
+
+
 
 test_checkCollision_One   
     ld hl, Display+1
@@ -337,11 +416,13 @@ waitForTVSyncTestCheckCol2
 	        djnz waitForTVSyncTestCheckCol2
         pop af
 
-        call drawMissileAndBlank
-        call updateMissilePosition
-        call updateAsteroidsPositions
         call drawAsteroids
+        call drawMissileAndBlank
         call checkIfMissileHit_FAST
+        call updateMissilePosition
+        call checkIfMissileHit_FAST
+        call updateAsteroidsPositions        
+        call printAsteroidValidStatus
         ; if a == 2
         cp 2
         pop bc   ; pop bc so it doesn't cause crash when breaking out early

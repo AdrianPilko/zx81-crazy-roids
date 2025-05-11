@@ -138,14 +138,14 @@ resetAsteroid_HL
         add hl, de
         ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
         add hl, de
-        push hl
+;        push hl
        ; pop de
 
-        pop bc
-        push de
-          ld de, 44
-          call print_number16bits
-        pop de
+;        pop bc
+;        push de
+;          ld de, 44
+;          call print_number16bits
+;        pop de
 ;stopHere
  ;       jr stopHere
     

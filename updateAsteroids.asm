@@ -63,7 +63,8 @@ updateAsteroidLoop
                 ld de, -33
                 add hl, de
                 ld hl, Display+1
-                ld de, $0321   ;the offset to the lowest row the asteroid should be able to get
+                ;ld de, $0321   ;the offset to the lowest row the asteroid should be able to get
+                ld de, $0342   ;the offset to the lowest row the asteroid should be able to get
                 add hl, de
                 push hl
                 pop de
