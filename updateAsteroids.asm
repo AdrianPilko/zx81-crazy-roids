@@ -131,6 +131,23 @@ endLoopUpdateAsteroids
     djnz updateAsteroidLoop
     ret
 
+
+countNumberValidAsteroids
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS
+    ld hl, asteroidValidMap
+    ld e, 0
+countAsteroidValidLoop
+    ld a, (hl)
+    cp 0
+    jr z, skipIncValidAsteroid
+    inc e
+skipIncValidAsteroid    
+    inc hl
+    djnz countAsteroidValidLoop
+
+    ld a, e  ; a stores the count of valid asteroids on return
+    ret
+
 ; in an attempt to improve ability to write relicable code I've added 
 ; some code in each file for testing individual subroutines,
 ; these currently have to be assembled in and called from the main asm file

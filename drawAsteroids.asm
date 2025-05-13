@@ -35,7 +35,8 @@ asteroidValidMap
     DB 0,0,0,0,0,0,0,0
 asteroidValidMapPtr
     DW 0
-
+asteroidXPositions
+    DB 0,0,0,0,0,0,0,0
 
 drawAsteroids
 
@@ -137,18 +138,7 @@ resetAsteroid_HL
         ld hl, Display+1
         add hl, de
         ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
-        add hl, de
-;        push hl
-       ; pop de
-
-;        pop bc
-;        push de
-;          ld de, 44
-;          call print_number16bits
-;        pop de
-;stopHere
- ;       jr stopHere
-    
+        add hl, de  
     pop hl
 
     ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions

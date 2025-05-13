@@ -85,9 +85,6 @@ fastHitFoundAsteroid
         pop hl
         pop bc
 
-        ;; we can use the loop count in bc to skip to the
-        ;; place in asteroidValidBitMap
-
         ld hl, asteroidValidMap 
         ld a, (tempFindAsteroidIndex)
         ld b, a
@@ -99,17 +96,38 @@ asteroidIndexLoop
 skipasteroidIndexLoop
         xor a
         ld (hl), a
- ;       ld bc,620
- ;       ld de, testDEBUGText_HIT
- ;       call printstring  
- ;       call printAsteroidValidStatus       
 
- ;       ld a,(tempFindAsteroidIndex)
- ;       ld de, 760
- ;       call print_number8bits
+        ;; do the same loop but now to set new (start) location for that asteroid that was hit
+        ld hl, asteroidTopLeftPositions 
+        ld a, (tempFindAsteroidIndex)
+        ld b, a
+        cp 0
+        jr z, skipasteroidIndexLoop2
+asteroidIndexLoop2
+        inc hl
+        inc hl
+        djnz asteroidIndexLoop2
+skipasteroidIndexLoop2
 
-;stopLoopHere
-;        jr stopLoopHere
+
+        push hl
+            call randAsteroidLocation   
+        pop hl
+        ld d, 0
+        ld e, a
+        push hl
+            ld hl, Display+1
+            add hl, de
+            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
+            add hl, de  
+        pop hl
+
+        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+        ld (hl), a
+        ld a, d
+        inc hl
+        ld (hl), a
+        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
 
         jr drawExplosionPreLoop
 fastHitNotFoundAsteroid
@@ -265,8 +283,12 @@ exitLoopEarlyCheckCollision
     ret
 
 
-testCollisionText_done
-    db _T,_E,_S,_T,__,_D,_O,_N,_E,$ff
+testCollisionTextMulti_done
+    db _T,_E,_S,_T,__,_D,_O,_N,_E,__,_M,_U,_L,_T,_I,$ff
+testCollisionTextOne_done
+    db _T,_E,_S,_T,__,_D,_O,_N,_E,__,_O,_N,_E,$ff
+testCollisionTextTop_done
+    db _T,_E,_S,_T,__,_D,_O,_N,_E,__,_T,_O,_P,$ff
 
 test_checkCollisionMulti
     ld hl, Display+1
@@ -287,7 +309,7 @@ test_checkCollisionMulti
 testCheckColMissileLoop1
     push bc
         push af
-	        ld b,4
+	        ld b,40
 waitForTVSyncTestCheckCol1
 	        call vsync
 	        djnz waitForTVSyncTestCheckCol1
@@ -299,7 +321,7 @@ waitForTVSyncTestCheckCol1
         call checkIfMissileHit_FAST
         call updateAsteroidsPositions        
         call printAsteroidValidStatus
-        
+        call printAsteroidPoistions
         ; if a == 2
         cp 2
         ;pop bc   ; pop bc so it doesn't cause crash when breaking out early
@@ -317,12 +339,15 @@ skipfireMissileAgain
         ld de, 695
         ld bc, (asteroidTopLeftPositions)
 	    call print_number16bits
+        call countNumberValidAsteroids
+        ld de, 29
+        call print_number8bits
     pop bc
     djnz testCheckColMissileLoop1
 testCheckCollisionDone
     call printAsteroidValidStatus
     ld bc,728
-    ld de,testCollisionText_done
+    ld de,testCollisionTextMulti_done
     call printstring
     ret
 
@@ -357,8 +382,7 @@ waitForTVSyncTestCheckColTop1
         call updateMissilePosition
         call checkIfMissileHit_FAST
         ;call updateAsteroidsPositions        ;;; in this mode keep asteroid on top row
-        call printAsteroidValidStatus
-        
+        call printAsteroidValidStatus        
         ; if a == 2
         cp 2
         ;pop bc   ; pop bc so it doesn't cause crash when breaking out early
@@ -381,7 +405,7 @@ skipfireMissileAgainTop
 testCheckCollisionDoneTop
     call printAsteroidValidStatus
     ld bc,728
-    ld de,testCollisionText_done
+    ld de,testCollisionTextTop_done
     call printstring
     ret
 
@@ -436,6 +460,6 @@ waitForTVSyncTestCheckCol2
     djnz testCheckColMissileLoop2
 testCheckCollisionDone2
     ld bc,728
-    ld de,testCollisionText_done
+    ld de,testCollisionTextOne_done
     call printstring
     ret

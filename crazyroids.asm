@@ -179,9 +179,9 @@ Line1Text:      DB $ea                        ; REM
 	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;     call test_Missile
-
-;     call test_checkCollisionMulti
-     call test_checkCollisionAtTopRow
+;    call test_randAsteroidLocation
+     call test_checkCollisionMulti
+;     call test_checkCollisionAtTopRow
 
 ;    call test_checkCollision_One
 ;    call test_initialiseAsteroids
@@ -584,6 +584,10 @@ updateRestOfScreen
 skipMissileDraw
     call checkIfPlayerHit
     call updateAsteroidsPositions 
+
+    ;call countNumberValidAsteroids
+    ;ld de, 29
+    ;call print_number8bits
     jp gameLoop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1030,7 +1034,7 @@ drawSprite_OR_ColLoop
 
 printLivesAndScore
     ld a, (playerLives)
-    ld de, 29
+    ld de, 29   
     call print_number8bits
 
     ld bc, 11
@@ -1147,7 +1151,7 @@ print_number16bits    ; bc stores the 16bits, print b then c, de stores offset f
     ret
 
 
-print_number8bits
+print_number8bits       ; de stores the location to print relative to DF_CC
     ld hl, (DF_CC)
     add hl, de
     push af ;store the original value of a for later
