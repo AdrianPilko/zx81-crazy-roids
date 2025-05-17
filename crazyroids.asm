@@ -44,7 +44,7 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 8
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 7    ; is only space comfortably for 7
 
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
@@ -176,13 +176,13 @@ Line1Text:      DB $ea                        ; REM
 ;; in test mode comment out jp intro_title and comment in the test calls
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	jp intro_title		; main entry point
+;	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    call test_randAsteroidLocation
+;
 ;     call test_Missile
-;    call test_randAsteroidLocation
-     call test_checkCollisionMulti
+;     call test_checkCollisionMulti
 ;     call test_checkCollisionAtTopRow
-
 ;    call test_checkCollision_One
 ;    call test_initialiseAsteroids
 ;    call test_UpdateAsteroids
@@ -601,7 +601,7 @@ skipMissileDraw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+include utility.asm
 include initAsteroids.asm
 include updateAsteroids.asm
 include drawAsteroids.asm
@@ -1123,85 +1123,6 @@ awardNewLife
     ld (playerLives),a
 endOfIncreaseScore
     ret
-
-; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
-printstring
-    push de ; preserve de
-    ld hl,Display
-    add hl,bc
-printstring_loop
-    ld a,(de)
-    cp $ff
-    jp z,printstring_end
-    ld (hl),a
-    inc hl
-    inc de
-    jr printstring_loop
-printstring_end
-    pop de  ; preserve de
-    ret
-
-print_number16bits    ; bc stores the 16bits, print b then c, de stores offset from Display
-    ld a, b
-    call print_number8bits
-    ld a, c
-    inc de  ; move de over by 2
-    inc de
-    call print_number8bits
-    ret
-
-
-print_number8bits       ; de stores the location to print relative to DF_CC
-    ld hl, (DF_CC)
-    add hl, de
-    push af ;store the original value of a for later
-    and $f0 ; isolate the first digit
-    rra
-    rra
-    rra
-    rra
-    add a,$1c ; add 28 to the character code
-    ld (hl), a
-    inc hl
-    pop af ; retrieve original value of a
-    and $0f ; isolate the second digit
-    add a,$1c ; add 28 to the character code
-    ld (hl), a
-
-    ret
-
-printNumber
-    ld hl,Display
-    add hl,bc
-printNumber_loop
-    ld a,(de)
-    push af ;store the original value of a for later
-    and $f0 ; isolate the first digit
-    rra
-    rra
-    rra
-    rra
-    add a,$1c ; add 28 to the character code
-    ld (hl), a
-    inc hl
-    pop af ; retrieve original value of a
-    and $0f ; isolate the second digit
-    add a,$1c ; add 28 to the character code
-    ld (hl), a
-    ret
-
-
-;check if TV synchro (FRAMES) happend
-vsync
-	ld a,(FRAMES)
-	ld c,a
-sync
-	ld a,(FRAMES)
-	cp c
-	jr z,sync
-endOfVsync
-	ret
-
 
                 DB $76                        ; Newline
 Line1End

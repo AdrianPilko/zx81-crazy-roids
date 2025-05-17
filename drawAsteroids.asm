@@ -46,7 +46,8 @@ assumeAllAsteroidsValid
 
     ld b, TOTAL_NUMBER_OF_ASTEROIDS       ; we have TOTAL_NUMBER_OF_ASTEROIDS asteroids on screen at any one time
     ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
-
+    xor a
+    ld (asteroid8BitIndex),a
 drawAsteroidLoop
     push bc
         push hl
@@ -112,7 +113,10 @@ skipUpdateAsteroidSpritePtr
 skipDrawAsteroid
     push hl
         ;; call subroutine to reset this asteroid, uses dec hl, dec hl to skip back
-        call resetAsteroid_HL
+        push af 
+            ld a, (asteroid8BitIndex)
+            call resetAsteroid_HL
+        pop af
     pop hl
 endDrawAstLoop
     push hl
@@ -120,6 +124,10 @@ endDrawAstLoop
         inc hl
         ld (asteroidValidMapPtr), hl
     pop hl 
+
+    ld a, (asteroid8BitIndex)
+    inc a
+    ld  (asteroid8BitIndex),a
     pop bc 
     djnz drawAsteroidLoop
 
@@ -128,31 +136,40 @@ endDrawAstLoop
 
 
 resetAsteroid_HL
+        push hl
+            push af 
+                ld de, 28
+                call print_number8bits
+            pop af 
+            call randAsteroidLocation   
+        pop hl
+        ld d, 0
+        ld e, a
 
-    push hl
-        call randAsteroidLocation   
-    pop hl
-    ld d, 0
-    ld e, a
-    push hl
-        ld hl, Display+1
-        add hl, de
-        ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
-        add hl, de  
-    pop hl
+        push hl
+            ld hl, Display+1
+            add hl, de
+            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
+            add hl, de 
+            push hl
+            pop de 
+        pop hl
+        
+        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+        ld (hl), a
+        ld a, d
+        inc hl
+        ld (hl), a
+        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
+        
+        call printAsteroidPoistions
 
-    ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
-    ld (hl), a
-    ld a, d
-    inc hl
-    ld (hl), a
-    inc hl          ; move to next asteroid location from asteroidTopLeftPositions
-    
-    ;set this asteroid is valid
-    ld hl, (asteroidValidMapPtr)
-    ld a, 1
-    ld (hl), a
-
+        push hl
+            ;set this asteroid is valid
+            ld hl, (asteroidValidMapPtr)
+            ld a, 1
+            ld (hl), a
+        pop hl
     ret
 
 
@@ -164,18 +181,19 @@ test_drawAsteroids
     call initialiseAsteroids
     call initialiseAsteroidValidAllOn
     ;call initialiseAValidAlternate
-    call printAsteroidValidStatus
+;    call printAsteroidValidStatus
 
     ld b, 128
 test_DrawAsteroidLoop1
     push bc
         push af
-	        ld b,2
+	        ld b,6
 waitForTVSyncTestDraw1
 	        call vsync
 	        djnz waitForTVSyncTestDraw1
         pop af
         call updateAsteroidsPositions
+        call printAsteroidValidStatus
         call drawAsteroids
     pop bc
     djnz test_DrawAsteroidLoop1
@@ -187,12 +205,14 @@ waitForTVSyncTestDraw1
 test_DrawAsteroidLoop2
     push bc
         push af
-	        ld b,2
+	        ld b,6
 waitForTVSyncTestDraw2
 	        call vsync
 	        djnz waitForTVSyncTestDraw2
         pop af
         call updateAsteroidsPositions
+        call printAsteroidValidStatus
+
         call drawAsteroids
     pop bc
     djnz test_DrawAsteroidLoop2

@@ -108,26 +108,26 @@ asteroidIndexLoop2
         inc hl
         djnz asteroidIndexLoop2
 skipasteroidIndexLoop2
-
-
-        push hl
-            call randAsteroidLocation   
-        pop hl
-        ld d, 0
-        ld e, a
-        push hl
-            ld hl, Display+1
-            add hl, de
-            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
-            add hl, de  
-        pop hl
-
-        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
-        ld (hl), a
-        ld a, d
-        inc hl
-        ld (hl), a
-        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
+;        call initialiseAsteroids
+        
+;        push hl
+;            call randAsteroidLocation   
+;        pop hl
+;        ld d, 0
+;        ld e, a
+;        push hl
+;            ld hl, Display+1
+;            add hl, de
+;            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
+;            add hl, de  
+;        pop hl
+;
+;        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+;        ld (hl), a
+;        ld a, d
+;        inc hl
+;        ld (hl), a
+;        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
 
         jr drawExplosionPreLoop
 fastHitNotFoundAsteroid
@@ -271,7 +271,7 @@ explosionDelayLoop2
 noHitMissile
             ; increment asteroid valid temp "pointer"
             ld hl, (asteroidValidMapPtr)
-            ;inc hl
+            inc hl
             ld (asteroidValidMapPtr), hl
         pop hl      ; restore hl now is next asteroid position
     pop bc 

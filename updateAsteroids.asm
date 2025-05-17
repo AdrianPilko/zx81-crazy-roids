@@ -36,14 +36,22 @@
 PRINT			EQU $10
 PRINTAT			EQU $08F5
 
+asteroid8BitIndex  ; this is a temp index that can be passed to the randAsteroid position subroutine
+    db 0
 asteroidTempPositionStore                   ; used to store current hl in updateAsteroidPositions
     dw 0
 resetAsteroidText
     db _R,_E,_S,_E,_T,$ff
 
 updateAsteroidsPositions
+
+    ld hl, asteroidValidMap
+    ld (asteroidValidMapPtr), hl
+
     ld b, TOTAL_NUMBER_OF_ASTEROIDS                                 ; we have 8 asteroids on screen at any one time
     ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
+    xor a
+    ld a, (asteroid8BitIndex)
 
 updateAsteroidLoop
 
@@ -73,6 +81,8 @@ updateAsteroidLoop
         cp d
         jr nc, resetUpdateAsteroid
 
+        
+
 continueUpdateAsteroid
         push hl                             ; save hl
             dec hl                              ; return hl to previous position
@@ -101,32 +111,34 @@ continueUpdateAsteroid
         inc hl
         jp endLoopUpdateAsteroids
 resetUpdateAsteroid
-    push hl
-        ;; we need to make sure asteroids are at unique positions
-        call randAsteroidLocation
-        ; a now contains the random pos, need to get it in de
-        ld a, (randNextAsteroidPosition)
-        ld d, 0
-        ld e, a    
-        ld hl, Display+1
-        add hl, de
-        ld de, 66
-        add hl, de
-        push hl
-        pop de
-    pop hl
-
-    dec hl
-    dec hl   
-
-    ld a, e
+    ;ld a, (asteroid8BitIndex)
+    ;call resetAsteroid_HL
+    
+    ld hl, (asteroidValidMapPtr)
+    xor a
     ld (hl), a
-    inc hl
-    ld a, d
-    ld (hl), a
-    inc hl
     
 endLoopUpdateAsteroids
+
+
+    ld a, (asteroid8BitIndex)
+    inc a
+    ld (asteroid8BitIndex), a
+    push de
+        push hl
+            ld de, 24
+            call print_number8bits
+            call printAsteroidPoistions
+            call printAsteroidValidStatus
+        pop hl
+    pop de
+
+    push hl
+        ld hl, (asteroidValidMapPtr)
+        inc hl
+        ld (asteroidValidMapPtr), hl
+    pop hl
+
     pop bc
     djnz updateAsteroidLoop
     ret
