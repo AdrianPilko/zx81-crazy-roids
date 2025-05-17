@@ -98,6 +98,70 @@ setFirstPositionForTest
     ret
 
 
+initialiseSingleAsteroid
+;PURPOSE
+;========
+; initialise one asteroid with index stored in asteroid8BitIndex
+; after this the asteroid will have
+;     X position set - effectively asteroidXPositions[asteroid8BitIndex]
+;     Valid status set - effectively asteroidValidMap[asteroid8BitIndex]
+
+
+    ld a, (asteroid8BitIndex)
+    ld b, a
+    push bc
+        call randAsteroidLocation 
+        ld hl, asteroidTopLeftPositions
+    pop bc
+
+initSingleIncLoop_1
+    inc hl    ; inc twice as asteroid screen location is two bytes
+    inc hl
+    djnz initSingleIncLoop_1
+    dec hl    ; convention is that asteroid8BitIndex has to be one more than required else djnz wraps 255
+    dec hl    ; so dec hl twice at end - I know a bit janky
+    ;; hl now contains the memory location of the asteroid we want to update
+
+   
+    ld d, 0
+    ld e, a
+    push hl
+        ld hl, Display+1
+        add hl, de
+        ld de,66       ; add an extra 33 to keep it 2 off the top - not 1 so blanking works
+        add hl, de
+        push hl
+        pop de
+    pop hl
+
+    ld a, e            ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+    ld (hl), a
+    ld a, d
+    inc hl
+    ld (hl), a    
+
+
+    ;;;; Update valid map
+    ld a, (asteroid8BitIndex)
+    ld b, a  
+    ld hl, asteroidValidMap
+initSingleIncLoop_2
+    inc hl    ; inc twice as asteroid screen location is two bytes
+    djnz initSingleIncLoop_2
+    dec hl    ; convention is that asteroid8BitIndex has to be one more than required else djnz wraps 255
+    ;; hl now contains the memory location of the asteroidValidMap we want to update
+    ld a, 1
+    ld (hl), a
+
+    ; may as well reset the sprite pointer as well (but affects all asteroids
+    xor a
+    ld (asteroidSpriteCycleCount), a
+    ld hl, asteroidSpriteData4x4
+    ld (asteroidSpritePointer), hl
+
+    ret
+
+
 initialiseAsteroids    
     ld b, TOTAL_NUMBER_OF_ASTEROIDS 
     ld hl, asteroidTopLeftPositions
@@ -114,18 +178,18 @@ initAsteroidsLoop
         push hl
             ld hl, Display+1
             add hl, de
-            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
+            ld de,66       ; add an extra 33 to keep it 2 off the top - not 1 so blanking works
             add hl, de
             push hl
             pop de
         pop hl
 
-        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+        ld a, e            ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
         ld (hl), a
         ld a, d
         inc hl
         ld (hl), a
-        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
+        inc hl             ; move to next asteroid location from asteroidTopLeftPositions
     pop bc
     ld a, (asteroid8BitIndex)
     inc a
@@ -139,13 +203,18 @@ initAsteroidsLoop
     
     ret
 
-randAsteroidLocation  
-; PURPOSE
+
+randAsteroidLocation 
+
+;PURPOSE
+;========
 ; set "random" position of asteroid numbered asteroid8BitIndex, where asteroid8BitIndex = 0 to TOTAL_NUMBER_OF_ASTEROIDS-1
 ; and sets a to that x position as well as randomPrecalculatedXPos
-; clobbers registers hl, a, b, 
-; updates memory locations:  randomPrecalculatedXPos
-; reads from asteroid8BitIndex
+;
+; clobbers registers hl, a, b
+; 
+; reads:    asteroid8BitIndex,randomPrecalculatedXPos
+; test by:  test_randAsteroidLocation
 
     call setRandomNumber6
     ;a now has number 0 to 6 which we'll use to index randomPrecalculatedXPos
@@ -202,7 +271,10 @@ randLimitComplete
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; TEST CODE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; test code
+
+testInitAstDoneText
+    db _T,_E,_S,_T,__,_I,_N,_I,_T,__, _A,_S,_T,_E,_R,_O,_I,_D,__,_D,_O,_N,_E,$ff
+
 test_initialiseAsteroids
 
     ld b, $ff
@@ -218,6 +290,12 @@ testIniAsteroidLoop
         call printAsteroidXPositions
     pop bc
     djnz testIniAsteroidLoop
+ 
+
+    ld de, testInitAstDoneText
+    ld bc, 664
+    call printstring
+
     ret 
 
 printAsteroidValidStatus
@@ -240,8 +318,29 @@ testValidPrintAsteroidLoop
     ret
 
 
-testDoneText
-    db _D,_O,_N,_E,$ff
+testSetOneDoneText
+    db _T,_E,_S,_T,__,_I,_N,_I,_T,__, _O,_N,_E,__,_D,_O,_N,_E,$ff
+    
+
+test_initialiseSingleAsteroid
+    ;; test initialising just 3rd asteroid, remeber not zero indexed, 1 to TOTAL_NUMBER_OF_ASTEROIDS inclusive
+    ld a, 3
+    ld (asteroid8BitIndex),a
+
+    call initialiseSingleAsteroid
+
+    call printAsteroidPoistions
+    call printAsteroidValidStatus
+    call printAsteroidXPositions
+
+    ld de, testSetOneDoneText
+    ld bc, 664
+    call printstring
+
+    ret
+
+testRandDoneText
+    db _T,_E,_S,_T,__,_R,_A,_N,_D,__, _A,_S,_T,_E,_R,_O,_I,_D,__,_D,_O,_N,_E,$ff
 
 test_randAsteroidLocation
 
@@ -280,7 +379,8 @@ test_randAsteroidLoop
     call printAsteroidXPositions
     pop bc
     djnz testRandLoop
-    ld de, testDoneText
+ 
+    ld de, testRandDoneText
     ld bc, 169
     call printstring
     ret
@@ -292,9 +392,10 @@ printAsteroidPoistions
     push af
     push de
 
-    ld b, 4
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS
     ld hl, asteroidTopLeftPositions
     ld de, 165  ; position of print initially then inc'd below
+
 debugPrintAsteroidPos1stRow
     push bc
         ld a, (hl)
@@ -308,37 +409,14 @@ debugPrintAsteroidPos1stRow
                 call print_number16bits
             pop hl
         pop de  
-        inc de 
-        inc de
-        inc de
-        inc de
-        inc de
+
+        push hl
+            ld hl, 33
+            add hl, de
+            ex de, hl
+        pop hl
     pop bc
     djnz debugPrintAsteroidPos1stRow
-    
-    ld b, 4
-    ld de, 198  ; position of print initially then inc'd below
-debugPrintAsteroidPos2ndRow
-    push bc
-        ld a, (hl)
-        ld c, a 
-        inc hl
-        ld a, (hl)
-        ld b, a
-        inc hl
-        push de
-            push hl
-                call print_number16bits
-            pop hl
-        pop de  
-        inc de 
-        inc de
-        inc de
-        inc de
-        inc de
-    pop bc
-    djnz debugPrintAsteroidPos2ndRow
-
     
     pop de
     pop af

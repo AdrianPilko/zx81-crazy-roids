@@ -222,7 +222,4 @@ waitForTVSyncTestDraw2
     ld bc,728
     ld de,testAsteroidText_done
     call printstring
-
-endTestDrawAsteroid
-    jr endTestDrawAsteroid
     ret

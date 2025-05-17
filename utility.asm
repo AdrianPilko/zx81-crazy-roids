@@ -106,3 +106,15 @@ endOfVsync
 	ret
 
 
+delaySome
+    ld b, $ff
+delaySomeOuter
+    push bc
+        ld b, $ff
+delaySomeInner
+        inc a
+        dec a
+        djnz delaySomeInner
+    pop bc
+    djnz delaySomeOuter
+    ret

@@ -168,7 +168,7 @@ skipIncValidAsteroid
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; TEST CODE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; test code
+
 test_UpdateAsteroids
 
     ld de, 166

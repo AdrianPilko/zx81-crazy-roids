@@ -178,17 +178,38 @@ Line1Text:      DB $ea                        ; REM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    call test_initialiseSingleAsteroid
+    call delaySome
+    call delaySome
+    call delaySome
+endTesting_1
+    jr endTesting_1
+    call CLS
     call test_randAsteroidLocation
-;
-;     call test_Missile
-;     call test_checkCollisionMulti
-;     call test_checkCollisionAtTopRow
-;    call test_checkCollision_One
-;    call test_initialiseAsteroids
-;    call test_UpdateAsteroids
-;    call test_drawAsteroids
-endTest
-    jr endTest
+    call delaySome
+    call CLS
+    call test_initialiseAsteroids
+    call delaySome
+    call CLS
+    call test_drawAsteroids
+    call delaySome
+    call CLS
+    call test_Missile
+    call delaySome
+    call CLS
+    call test_checkCollisionMulti
+    call delaySome
+    call CLS
+    call test_checkCollisionAtTopRow
+    call delaySome
+    call CLS
+    call test_checkCollision_One
+    call delaySome
+    call CLS
+    call test_UpdateAsteroids
+endTesting_2
+    jr endTesting_2
 ;;; end of test modes    
 
 
