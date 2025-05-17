@@ -111,8 +111,8 @@ continueUpdateAsteroid
         inc hl
         jp endLoopUpdateAsteroids
 resetUpdateAsteroid
-    ;ld a, (asteroid8BitIndex)
-    ;call resetAsteroid_HL
+    ld a, (asteroid8BitIndex)
+    call resetAsteroid_HL
     
     ld hl, (asteroidValidMapPtr)
     xor a
@@ -126,8 +126,6 @@ endLoopUpdateAsteroids
     ld (asteroid8BitIndex), a
     push de
         push hl
-            ld de, 24
-            call print_number8bits
             call printAsteroidPoistions
             call printAsteroidValidStatus
         pop hl

@@ -136,40 +136,9 @@ endDrawAstLoop
 
 
 resetAsteroid_HL
-        push hl
-            push af 
-                ld de, 28
-                call print_number8bits
-            pop af 
-            call randAsteroidLocation   
-        pop hl
-        ld d, 0
-        ld e, a
-
-        push hl
-            ld hl, Display+1
-            add hl, de
-            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
-            add hl, de 
-            push hl
-            pop de 
-        pop hl
-        
-        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
-        ld (hl), a
-        ld a, d
-        inc hl
-        ld (hl), a
-        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
-        
-        call printAsteroidPoistions
-
-        push hl
-            ;set this asteroid is valid
-            ld hl, (asteroidValidMapPtr)
-            ld a, 1
-            ld (hl), a
-        pop hl
+    push hl
+        call initialiseSingleAsteroid
+    pop hl
     ret
 
 

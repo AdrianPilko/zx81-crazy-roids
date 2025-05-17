@@ -178,23 +178,24 @@ Line1Text:      DB $ea                        ; REM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+    jr onlyTestThis
     call test_initialiseSingleAsteroid
     call delaySome
     call delaySome
     call delaySome
-endTesting_1
-    jr endTesting_1
     call CLS
     call test_randAsteroidLocation
     call delaySome
     call CLS
     call test_initialiseAsteroids
     call delaySome
+onlyTestThis
     call CLS
     call test_drawAsteroids
     call delaySome
     call CLS
+    jr onlyTestThis
+
     call test_Missile
     call delaySome
     call CLS
