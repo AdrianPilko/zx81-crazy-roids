@@ -36,13 +36,13 @@ tempAsteroidXPosition
 randomXPosTableIndex
     dw 0
 randomPrecalculatedXPos
-    db 9, 6, 12, 16,  20,  24, 28  
-    db 6, 12, 16,  20,  24, 28, 9
-    db 12, 16,  20,  24, 28, 9, 6
-    db 16,  20,  24, 28, 9, 6, 12
-    db 20,  24, 28, 9, 6, 12, 16  
+    db 9, 6, 12, 16,  20,  24, 26  
+    db 6, 14, 16,  20,  24, 28, 9
+    db 12, 16,  20,  24, 27, 9, 6
+    db 16,  20,  3, 2, 9, 6, 12
+    db 20,  24, 5, 9, 6, 12, 16  
     db 24, 28, 9, 6, 12, 16, 20   
-    db 28, 9, 6, 12, 16, 20 , 24 
+    db 28, 9, 6, 7, 16, 20 , 5 
 
 initialise_3_AsteroidValid
       

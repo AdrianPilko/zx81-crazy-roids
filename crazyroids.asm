@@ -465,9 +465,9 @@ resetEvenOddAndSetFlag
     ld a, 1
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-    ;;ld a,(evenOddLoopFlag)
-    ;;ld de, 764
-    ;;call print_number8bits
+    ld a,(evenOddLoopFlag)
+    ld de, 764
+    call print_number8bits
 
 continueWithGameLoop
 
@@ -480,21 +480,20 @@ continueWithGameLoop
     ld a, (gameOverRestartFlag)
     cp 1
     jp z, intro_title
+    
+    ;;ld a, (evenOddLoopFlag)
+    ;;cp 0
+    ;;jr z, skipUFOInGameLoop
 
-
-    ;ld a, (evenOddLoopFlag)
-    ;cp 0
-    ;jr z, skipUFOInGameLoop
-
-    ;call asteroidUFOCountUp
+    call asteroidUFOCountUp
     
     ;ld a, (evenOddLoopFlag)
     ;cp 1
     ;call z, updateAsteroidsPositions
 
-    ;ld a, (UFOValid)
-    ;cp 1
-    ;call z, drawUFOBonus
+    ld a, (UFOValid)
+    cp 1
+    call z, drawUFOBonus
 
 skipUFOInGameLoop
 
@@ -659,15 +658,6 @@ include drawAsteroids.asm
 include checkHitAndCollision.asm
 include missile.asm
 include player.asm
-
-;updatePirateXPos
-;    ld a, (pirateXPos)
-;    cp 14
-;    jr z, reversePirateDirToNeg
-;    cp 3
-;    jr z, reversePirateDirToPos
-
-;    jr endOfUpdatePirateXPos
 
 asteroidUFOCountUp
     ld a, (UFOBonusCountUp)
