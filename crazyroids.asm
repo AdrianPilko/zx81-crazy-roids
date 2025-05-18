@@ -67,7 +67,7 @@ ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 2
 
-VSYNCLOOP       EQU      2
+VSYNCLOOP       EQU      1
 
 ; character set definition/helpers
 __:				EQU	$00	;spacja

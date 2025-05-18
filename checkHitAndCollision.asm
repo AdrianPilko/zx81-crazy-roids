@@ -82,6 +82,13 @@ findAsteroidLoop1
         inc hl
         cp b 
         jp z, foundIndexAsteroid
+        inc a
+        cp b          
+        jp z, foundIndexAsteroid
+        inc a        
+        cp b         
+        jp z, foundIndexAsteroid
+
         ld a, (tempFindAsteroidIndex)
         inc a
         ld (tempFindAsteroidIndex), a

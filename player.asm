@@ -73,8 +73,36 @@ getPlayerHitHLIndexLoop
             ld de, (asteroidPosTemp)
             sbc hl, de
             push af
-                call z, executeRestartLevel
+                call z, executeRestartLevel                
             pop af
+
+            ld hl, (currentPlayerLocation)
+            ld de, 33
+            sbc hl, de
+            ; check either side - not just direct hit
+            ld de, (asteroidPosTemp)
+            inc de  
+            sbc hl, de
+            push af
+                call z, executeRestartLevel                
+            pop af
+
+            ld hl, (currentPlayerLocation)
+            ld de, 33
+            sbc hl, de
+            ; check either side - not just direct hit
+            ld de, (asteroidPosTemp)
+            dec de
+            dec de  
+            sbc hl, de
+            push af
+                call z, executeRestartLevel                
+            pop af
+
+
+
+
+
         pop hl
         jr z, checkIfPlayerHitEndEarly
 skipPlayerHit
