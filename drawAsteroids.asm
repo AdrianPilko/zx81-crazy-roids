@@ -124,15 +124,15 @@ endDrawAstLoop
 
     ret   
 
-asteroidResetDebugText
-    db _A,_S,_T,__,_R,_S,_E,_T,$ff
+;asteroidResetDebugText
+;    db _A,_S,_T,__,_R,_S,_E,_T,$ff
 
 resetAsteroid_HL   ; this needs asteroid8BitIndex set to the index (indexed from 1 to the asteroid to update)
     push hl        
         call initialiseSingleAsteroid    
-        ld bc,728
-        ld de,asteroidResetDebugText
-        call printstring
+;        ld bc,728
+;        ld de,asteroidResetDebugText
+;        call printstring
     pop hl
     ret
 

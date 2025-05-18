@@ -135,13 +135,6 @@ endLoopUpdateAsteroids
     ld a, (asteroid8BitIndex)
     inc a
     ld (asteroid8BitIndex), a
-    push de
-        push hl
-            call printAsteroidPoistions
-            call printAsteroidValidStatus
-        pop hl
-    pop de
-
     pop bc
     djnz updateAsteroidLoop
     ret
