@@ -24,7 +24,6 @@
 
 ;;; Known bug(s)
 ;;; - randomness isn't too good
-;;; - asteroid doesn't stop when hit
 ;;; - player only dies if lined up exactly with asteroid
 
 ;;  TODO
@@ -62,6 +61,7 @@ SCREEN_WIDTH EQU 32
 SCREEN_HEIGHT EQU 23   ; we can use the full screen becuase we're not using PRINT or PRINT AT ROM subroutines
 MISSILE_COUNTDOWN_INIT EQU 18
 PLAYER_START_POS EQU 637
+PLAYER_X_START_POS EQU 10
 PLAYER_LIVES EQU 3
 ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
@@ -190,6 +190,7 @@ Line1Text:      DB $ea                        ; REM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     jr onlyTestThis
     call test_initialiseSingleAsteroid
+                   
     call delaySome
     call delaySome
     call delaySome
@@ -199,23 +200,23 @@ Line1Text:      DB $ea                        ; REM
     call CLS
     call test_initialiseAsteroids
     call delaySome
-onlyTestThis
     call CLS
     call test_drawAsteroids
     call delaySome
-    call CLS
-    jr onlyTestThis
+    call CLS    
 
     call test_Missile
     call delaySome
     call CLS
+onlyTestThis
     call test_checkCollisionMulti
     call delaySome
     call CLS
+    jr onlyTestThis
     call test_checkCollisionAtTopRow
     call delaySome
     call CLS
-    call test_checkCollision_One
+    call test_checkCollision_One    
     call delaySome
     call CLS
     call test_UpdateAsteroids
@@ -385,6 +386,10 @@ initVariables
     ld de, PLAYER_START_POS
     add hl, de
     ld (currentPlayerLocation), hl
+    ld a, PLAYER_X_START_POS
+    ld (currentPlayerXPos), a
+
+
     call resetJollyRogerPos
 	
 	ld hl, UFOBonusSprite
@@ -492,6 +497,11 @@ continueWithGameLoop
     ;call z, drawUFOBonus
 
 skipUFOInGameLoop
+
+  ;  call printAsteroidValidStatus
+  ;  call printAsteroidPoistions
+
+
     call drawAsteroids
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
@@ -555,6 +565,10 @@ moveLeft
     dec hl
     ld (currentPlayerLocation), hl
 
+    ld a, (currentPlayerXPos)
+    dec a
+    ld (currentPlayerXPos), a
+
 
     ld a, KEYBOARD_READ_PORT_SPACE_TO_B
     in a, (KEYBOARD_READ_PORT)					; read from io port
@@ -576,11 +590,13 @@ moveRight
     jp z, updateRestOfScreen
     ld (playerXPos), a
 
-
-
     ld hl, (currentPlayerLocation)
     inc hl
     ld (currentPlayerLocation), hl
+
+    ld a, (currentPlayerXPos)
+    inc a
+    ld (currentPlayerXPos), a
 
     ld a, KEYBOARD_READ_PORT_SPACE_TO_B
     in a, (KEYBOARD_READ_PORT)					; read from io port
@@ -595,6 +611,9 @@ moveRight
     jr updateRestOfScreen
 
 doFireMissile      ; triggered when jump key pressed just sets the
+
+    ld a, (playerXPos)
+    ld (missileXPosition), a
     call fireMissile
 
 updateRestOfScreen
@@ -610,12 +629,12 @@ updateRestOfScreen
     jp z, skipMissileDraw
     
     call drawMissileAndBlank
-    call checkIfMissileHit_FAST
+    call checkIfMissileHit_FAST    ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
     call updateMissilePosition
-    call checkIfMissileHit_FAST      
-skipMissileDraw
-    call checkIfPlayerHit
+    call checkIfMissileHit_FAST      ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
+skipMissileDraw    
     call updateAsteroidsPositions 
+    call checkIfPlayerHit
 
     ;call countNumberValidAsteroids
     ;ld de, 29

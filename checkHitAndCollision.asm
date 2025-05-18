@@ -43,7 +43,6 @@ testDEBUGText_NOTHIT
 checkIfMissileHit_FAST    ; prototype, instead of checking all the positions just 
                           ; check if ahead of missile is not blank
 
-
     ;; check if missile is near top of screen, we don't want to get score if
     ;; it hits the top!    
     ld hl, Display+99
@@ -63,83 +62,48 @@ checkIfMissileHit_FAST    ; prototype, instead of checking all the positions jus
     cp 0
     jp nz, fastHit
     xor a
-
     jp fastHitDone
 fastHit
     xor a
     ld (MissileInFlightFlag), a
+ 
+;;; find out which asteroid it was to set valid map
+    ld a, 1
     ld (tempFindAsteroidIndex), a
-
-    ;; work out which asteroid was hit
+    ld hl, asteroidXPositions        
     ld b, TOTAL_NUMBER_OF_ASTEROIDS
-    ld hl, asteroidTopLeftPositions
-    
-fastHitCheckLoop
+findAsteroidLoop1    
     push bc
-        push hl
-            ld de, (currentMissilePosition)
-            sbc hl, de
-            jr nz, fastHitFoundAsteroid
-            jr fastHitNotFoundAsteroid
-fastHitFoundAsteroid
-        pop hl
-        pop bc
-
-        ld hl, asteroidValidMap 
+        ld a, (missileXPosition)
+        push af
+            ld a, (hl)    ; x position                
+            ld b, a 
+        pop af         
+        inc hl
+        cp b 
+        jp z, foundIndexAsteroid
         ld a, (tempFindAsteroidIndex)
-        ld b, a
-        cp 0
-        jr z, skipasteroidIndexLoop
-asteroidIndexLoop
-        inc hl
-        djnz asteroidIndexLoop
-skipasteroidIndexLoop
-        xor a
-        ld (hl), a
-
-        ;; do the same loop but now to set new (start) location for that asteroid that was hit
-        ld hl, asteroidTopLeftPositions 
-        ld a, (tempFindAsteroidIndex)
-        ld b, a
-        cp 0
-        jr z, skipasteroidIndexLoop2
-asteroidIndexLoop2
-        inc hl
-        inc hl
-        djnz asteroidIndexLoop2
-skipasteroidIndexLoop2
-;        call initialiseAsteroids
-        
-;        push hl
-;            call randAsteroidLocation   
-;        pop hl
-;        ld d, 0
-;        ld e, a
-;        push hl
-;            ld hl, Display+1
-;            add hl, de
-;            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
-;            add hl, de  
-;        pop hl
-;
-;        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
-;        ld (hl), a
-;        ld a, d
-;        inc hl
-;        ld (hl), a
-;        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
-
-        jr drawExplosionPreLoop
-fastHitNotFoundAsteroid
-        inc hl     ; push hl onto the next asteroid position
-        inc hl
-        pop hl 
+        inc a
+        ld (tempFindAsteroidIndex), a
     pop bc
-    ld a, (tempFindAsteroidIndex)
-    inc a 
-    ld (tempFindAsteroidIndex), a
+    djnz findAsteroidLoop1
+    jp fastHitDone
 
-    djnz fastHitCheckLoop
+foundIndexAsteroid
+    pop bc ; because we exited loop abouve early
+    ld hl, asteroidValidMap    
+    ld a, (tempFindAsteroidIndex)
+
+    ld b, a
+    xor a
+findAsteroidLoop2
+    inc hl
+    inc a
+    djnz findAsteroidLoop2
+    dec hl
+
+    xor a           ;;zero a
+    ld (hl), a      ;; now zero asteroidValidMap[tempFindAsteroidIndex]
 
 drawExplosionPreLoop
     ;; draw an explosion
@@ -189,6 +153,9 @@ fastHitDone
 missileNearTopSkipAll
     ret
 
+
+
+;;; slow version 
 
 checkIfMissileHit
     ld bc, TOTAL_NUMBER_OF_ASTEROIDS
@@ -311,6 +278,13 @@ test_checkCollisionMulti
     add hl, de
     ld (currentPlayerLocation), hl
 
+    ld a, $09
+    ld (missileXPosition), a
+
+    ld de, 25
+    push af
+        call print_number8bits
+    pop af 
     call initialiseAsteroids
     call initialiseAsteroidValidAllOn 
     call printAsteroidValidStatus
@@ -337,6 +311,7 @@ waitForTVSyncTestCheckCol1
         call updateAsteroidsPositions        
         call printAsteroidValidStatus
         call printAsteroidPoistions
+        call printAsteroidXPositions
         ; if a == 2
         cp 2
         ;pop bc   ; pop bc so it doesn't cause crash when breaking out early

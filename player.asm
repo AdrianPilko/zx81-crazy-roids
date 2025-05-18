@@ -31,6 +31,10 @@
 ;; =========
 ;;   - add checking of not just direct hit but each of the top 4 positions in the player sprite
 
+
+currentPlayerXPos
+    db 0
+
 checkIfPlayerHit
 
     ld b, TOTAL_NUMBER_OF_ASTEROIDS       ; we have TOTAL_NUMBER_OF_ASTEROIDS asteroids on screen at any one time

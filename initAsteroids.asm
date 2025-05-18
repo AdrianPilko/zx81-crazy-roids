@@ -31,17 +31,18 @@
 ;; =========
 ;;   - 
 
-
+tempAsteroidXPosition
+    db 0
 randomXPosTableIndex
     dw 0
 randomPrecalculatedXPos
-    db 1, 6, 12, 16,  20,  24, 28  
-    db 6, 12, 16,  20,  24, 28, 1
-    db 12, 16,  20,  24, 28, 1, 6
-    db 16,  20,  24, 28, 1, 6, 12
-    db 20,  24, 28, 1, 6, 12, 16  
-    db 24, 28, 1, 6, 12, 16, 20   
-    db 28, 1, 6, 12, 16, 20 , 24 
+    db 9, 6, 12, 16,  20,  24, 28  
+    db 6, 12, 16,  20,  24, 28, 9
+    db 12, 16,  20,  24, 28, 9, 6
+    db 16,  20,  24, 28, 9, 6, 12
+    db 20,  24, 28, 9, 6, 12, 16  
+    db 24, 28, 9, 6, 12, 16, 20   
+    db 28, 9, 6, 12, 16, 20 , 24 
 
 initialise_3_AsteroidValid
       
@@ -110,7 +111,7 @@ initialiseSingleAsteroid
     ld a, (asteroid8BitIndex)
     ld b, a
     push bc
-        call randAsteroidLocation 
+        call randAsteroidLocation         
         ld hl, asteroidTopLeftPositions
     pop bc
 
@@ -151,6 +152,18 @@ initSingleIncLoop_2
     dec hl    ; convention is that asteroid8BitIndex has to be one more than required else djnz wraps 255
     ;; hl now contains the memory location of the asteroidValidMap we want to update
     ld a, 1
+    ld (hl), a
+
+;; update astgeroid x position
+    ld a, (asteroid8BitIndex)
+    ld b, a  
+    ld hl, asteroidXPositions
+initSingleIncLoop_3
+    inc hl    ; inc twice as asteroid screen location is two bytes
+    djnz initSingleIncLoop_3
+    dec hl    ; convention is that asteroid8BitIndex has to be one more than required else djnz wraps 255
+    ;; hl now contains the memory location of the asteroidValidMap we want to update
+    ld a, (tempAsteroidXPosition)
     ld (hl), a
 
     ; may as well reset the sprite pointer as well (but affects all asteroids
@@ -249,6 +262,7 @@ incIndexOfRandomLoop_inner
     djnz incIndexOfRandomLoop_outer
     dec hl   ; we added one to b before to stop zero negative so dec on last hl
     ld a, (hl)
+    ld (tempAsteroidXPosition), a
     ret
 
 
