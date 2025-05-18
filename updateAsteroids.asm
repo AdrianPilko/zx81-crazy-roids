@@ -44,14 +44,10 @@ resetAsteroidText
     db _R,_E,_S,_E,_T,$ff
 
 updateAsteroidsPositions
-
-    ld hl, asteroidValidMap
-    ld (asteroidValidMapPtr), hl
-
     ld b, TOTAL_NUMBER_OF_ASTEROIDS                                 ; we have 8 asteroids on screen at any one time
     ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
-    xor a
-    ld a, (asteroid8BitIndex)
+    ld a, 1
+    ld (asteroid8BitIndex), a
 
 updateAsteroidLoop
 
@@ -64,25 +60,42 @@ updateAsteroidLoop
         ld d, a
         inc hl
 
-        push af  
-            push hl                                 ; save hl points to second memory location of locaitons
-                push de 
-                pop hl
-                ld de, -33
-                add hl, de
-                ld hl, Display+1
-                ;ld de, $0321   ;the offset to the lowest row the asteroid should be able to get
+       
+        push hl                                 ; save hl points to second memory location of locaitons
+   ;         push de 
+  ;          pop hl
+ ;           ld de, -33
+;            add hl, de
+            ld hl, Display+1
+            push de   ; save de
                 ld de, $0342   ;the offset to the lowest row the asteroid should be able to get
+                ;ld de, $0273
                 add hl, de
-                push hl
-                pop de
+            pop de  ; restore de
+
+            ;
+            ; register de contains the asteroid top left position
+            ; register hl contains the bottom most point we want any asteroid to reach (Display + $0342)
+            LD A, H
+            CP D         ; Compare high bytes first
+            JP C, hl_less      ; HL < DE
+            JP NZ, hl_not_less ; HL > DE (since H ≠ D)
+
+            LD A, L
+            CP E         ; If high bytes are equal, compare low bytes
+            JP C, hl_less      ; HL < DE
+            ; Else HL ≥ DE
+hl_not_less:
+            ; HL is not less than DE
+            ;; just continue to update
             pop hl
-        pop af
-        cp d
-        jr nc, resetUpdateAsteroid
-
-        
-
+            jr continueUpdateAsteroid
+hl_less:
+            ; HL is less than DE
+            
+            pop hl
+            jr resetUpdateAsteroid                       
+            
 continueUpdateAsteroid
         push hl                             ; save hl
             dec hl                              ; return hl to previous position
@@ -111,12 +124,10 @@ continueUpdateAsteroid
         inc hl
         jp endLoopUpdateAsteroids
 resetUpdateAsteroid
-    ld a, (asteroid8BitIndex)
-    call resetAsteroid_HL
-    
-    ld hl, (asteroidValidMapPtr)
-    xor a
-    ld (hl), a
+    push hl   ; save hl
+        ld a, (asteroid8BitIndex)
+        call resetAsteroid_HL
+    pop hl
     
 endLoopUpdateAsteroids
 
@@ -130,12 +141,6 @@ endLoopUpdateAsteroids
             call printAsteroidValidStatus
         pop hl
     pop de
-
-    push hl
-        ld hl, (asteroidValidMapPtr)
-        inc hl
-        ld (asteroidValidMapPtr), hl
-    pop hl
 
     pop bc
     djnz updateAsteroidLoop

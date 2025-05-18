@@ -191,20 +191,25 @@ missileNearTopSkipAll
 
 
 checkIfMissileHit
-    ld hl, asteroidValidMap
-    ld (asteroidValidMapPtr), hl
     ld bc, TOTAL_NUMBER_OF_ASTEROIDS
     ld hl, asteroidTopLeftPositions
+    ld a, 1
+    ld (asteroid8BitIndex), a    
 checkHitLoop 
     push bc
+
         push hl
-            ;check if asteroid is valid
-            ld hl, (asteroidValidMapPtr)
-            ld a, (hl)
-        ;pop hl   ; fandangling with stack to maintain consistency
+            ld hl, asteroidValidMap
+            ld a, (asteroid8BitIndex)
+            ld b, a
+getCurrentValidHLIndexHITLoop
+            inc hl
+            djnz getCurrentValidHLIndexHITLoop
+            dec hl
+            ld a, (hl)    ; register a contains the valid 
+        pop hl
         cp 1
         jp nz, noHitMissile
-        pop hl
 
         ld a, (hl)
         ld e, a
@@ -219,23 +224,32 @@ checkHitLoop
             ; compare upper and lower bytes of hl and de
             ld a, h
             cp d
-            jr z, checkNextMissileHit
-            jr noHitMissile
+        pop hl
+        jr z, checkNextMissileHit            
+        jr noHitMissile
 checkNextMissileHit
-            ld a, l
-            cp e
-            jr z, MissileHitAsteroid
-            jr noHitMissile
+        ld a, l
+        cp e
+        jr z, MissileHitAsteroid
+        jr noHitMissile
 
 MissileHitAsteroid
-            ;; missile HIT!!!
-            ld hl, (asteroidValidMapPtr)
-            ld a, 0
-            ld (hl), a   
-
-            ;also if we have hit then disable the missile now!!
+        ;; missile HIT!!!
+        push hl
+            ld hl, asteroidValidMap
+            ld a, (asteroid8BitIndex)
+            ld b, a
+getCurrentHLIndexHITLoop_2
+            inc hl
+            djnz getCurrentHLIndexHITLoop_2
+            dec hl
             xor a
-            ld (MissileInFlightFlag), a
+            ld (hl), a    ; set valid asteroidValidMap[asteroid8BitIndex] to zero
+        pop hl
+
+        ;also if we have hit then disable the missile now!!
+        xor a
+        ld (MissileInFlightFlag), a
         
             ;; draw an explosion
             ld b, 5
@@ -269,11 +283,12 @@ explosionDelayLoop2
         ld a, 2
         jr exitLoopEarlyCheckCollision
 noHitMissile
-            ; increment asteroid valid temp "pointer"
-            ld hl, (asteroidValidMapPtr)
-            inc hl
-            ld (asteroidValidMapPtr), hl
-        pop hl      ; restore hl now is next asteroid position
+
+
+    ld a, (asteroid8BitIndex)
+    inc a
+    ld  (asteroid8BitIndex),a
+
     pop bc 
     djnz checkHitLoop
 exitLoopEarlyCheckCollision

@@ -33,27 +33,23 @@
 
 asteroidValidMap
     DB 0,0,0,0,0,0,0,0
-asteroidValidMapPtr
-    DW 0
 asteroidXPositions
     DB 0,0,0,0,0,0,0,0
 
 drawAsteroids
-
-assumeAllAsteroidsValid
-    ld hl, asteroidValidMap
-    ld (asteroidValidMapPtr), hl
-
     ld b, TOTAL_NUMBER_OF_ASTEROIDS       ; we have TOTAL_NUMBER_OF_ASTEROIDS asteroids on screen at any one time
     ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
-    xor a
-    ld (asteroid8BitIndex),a
+    ld a, 1
+    ld (asteroid8BitIndex), a
 drawAsteroidLoop
     push bc
         push hl
-            ;check if asteroid is valid
-            ld hl, (asteroidValidMapPtr)
-            ld a, (hl)
+            ld hl, asteroidValidMap
+getCurrentValidHLIndexLoop
+            inc hl
+            djnz getCurrentValidHLIndexLoop
+            dec hl
+            ld a, (hl)    ; register a contains the valid 
         pop hl
         cp 0
         jp z, skipDrawAsteroid
@@ -100,7 +96,7 @@ drawAsteroidLoop
             ld hl, (asteroidSpritePointer)
             ld de, 32
             add hl, de
-            ld (asteroidSpritePointer), hl
+                ld (asteroidSpritePointer), hl
             jr skipUpdateAsteroidSpritePtr
 resetAsteroidSprite
             xor a
@@ -119,11 +115,6 @@ skipDrawAsteroid
         pop af
     pop hl
 endDrawAstLoop
-    push hl
-        ld hl, (asteroidValidMapPtr)
-        inc hl
-        ld (asteroidValidMapPtr), hl
-    pop hl 
 
     ld a, (asteroid8BitIndex)
     inc a
@@ -133,11 +124,15 @@ endDrawAstLoop
 
     ret   
 
+asteroidResetDebugText
+    db _A,_S,_T,__,_R,_S,_E,_T,$ff
 
-
-resetAsteroid_HL
-    push hl
-        call initialiseSingleAsteroid
+resetAsteroid_HL   ; this needs asteroid8BitIndex set to the index (indexed from 1 to the asteroid to update)
+    push hl        
+        call initialiseSingleAsteroid    
+        ld bc,728
+        ld de,asteroidResetDebugText
+        call printstring
     pop hl
     ret
 
@@ -148,45 +143,34 @@ testAsteroidText_done
 test_drawAsteroids
     
     call initialiseAsteroids
-    call initialiseAsteroidValidAllOn
-    ;call initialiseAValidAlternate
-;    call printAsteroidValidStatus
 
     ld b, 128
 test_DrawAsteroidLoop1
     push bc
         push af
-	        ld b,6
+	        ld b,3
 waitForTVSyncTestDraw1
 	        call vsync
 	        djnz waitForTVSyncTestDraw1
         pop af
         call updateAsteroidsPositions
-        call printAsteroidValidStatus
         call drawAsteroids
-    pop bc
-    djnz test_DrawAsteroidLoop1
-    
-    call initialiseFirstAsteroidValid
-    call printAsteroidValidStatus
-
-    ld b, 128
-test_DrawAsteroidLoop2
-    push bc
+        call printAsteroidValidStatus
+        call printAsteroidXPositions 
+        call printAsteroidPoistions  
         push af
-	        ld b,6
+	        ld b,3
 waitForTVSyncTestDraw2
 	        call vsync
 	        djnz waitForTVSyncTestDraw2
         pop af
-        call updateAsteroidsPositions
+
         call printAsteroidValidStatus
-
-        call drawAsteroids
+        call printAsteroidXPositions 
+        call printAsteroidPoistions                
     pop bc
-    djnz test_DrawAsteroidLoop2
-    
-
+    djnz test_DrawAsteroidLoop1
+  
 
     ld bc,728
     ld de,testAsteroidText_done

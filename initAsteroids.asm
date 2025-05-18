@@ -163,15 +163,27 @@ initSingleIncLoop_2
 
 
 initialiseAsteroids    
+    call initialiseAsteroidValidAllOn
     ld b, TOTAL_NUMBER_OF_ASTEROIDS 
     ld hl, asteroidTopLeftPositions
-    xor a
+    ld a, 1
     ld (asteroid8BitIndex), a
 initAsteroidsLoop
     push bc
         push hl
             ld a, (asteroid8BitIndex)
-            call randAsteroidLocation   
+            call randAsteroidLocation
+            ld hl, asteroidXPositions
+            push af 
+;                ld hl, asteroidXPositions
+                ld a, (asteroid8BitIndex)
+                ld b, a
+getCurrentXHLLocationLoop
+                inc hl
+                djnz getCurrentXHLLocationLoop
+                dec hl
+            pop af
+            ld (hl), a
         pop hl
         ld d, 0
         ld e, a
@@ -350,7 +362,7 @@ testRandLoop
     ld b, TOTAL_NUMBER_OF_ASTEROIDS
     ld de, 0
     ld hl, asteroidXPositions 
-    xor a
+    ld a, 1
     ld (asteroid8BitIndex), a
 test_randAsteroidLoop
         push bc 

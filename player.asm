@@ -33,10 +33,10 @@
 
 checkIfPlayerHit
 
-    ld hl, asteroidValidMap
-    ld (asteroidValidMapPtr), hl
     ld b, TOTAL_NUMBER_OF_ASTEROIDS       ; we have TOTAL_NUMBER_OF_ASTEROIDS asteroids on screen at any one time
     ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
+    ld a, 1
+    ld (asteroid8BitIndex), a
 
 checkIfPlayerHitLoop
     push bc
@@ -49,9 +49,14 @@ checkIfPlayerHitLoop
         ld (asteroidPosTemp), de
 
         push hl
-            ;check if asteroid is valid
-            ld hl, (asteroidValidMapPtr)
-            ld a, (hl)
+            ld hl, asteroidValidMap
+            ld a, (asteroid8BitIndex)
+            ld b, a            
+getPlayerHitHLIndexLoop
+            inc hl
+            djnz getPlayerHitHLIndexLoop
+            dec hl
+            ld a, (hl)    ; register a contains the valid 
         pop hl
         cp 0
         jp z, skipPlayerHit
@@ -73,6 +78,9 @@ skipPlayerHit
     djnz checkIfPlayerHitLoop
     jr endOfcheckIfPlayerHit
 checkIfPlayerHitEndEarly
+    ld a, (asteroid8BitIndex)
+    inc a
+    ld (asteroid8BitIndex), a
     pop bc  ; pop here as we exited loop early
 endOfcheckIfPlayerHit
     ret
