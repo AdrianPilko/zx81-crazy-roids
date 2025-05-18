@@ -175,7 +175,6 @@ initAsteroidsLoop
             call randAsteroidLocation
             ld hl, asteroidXPositions
             push af 
-;                ld hl, asteroidXPositions
                 ld a, (asteroid8BitIndex)
                 ld b, a
 getCurrentXHLLocationLoop

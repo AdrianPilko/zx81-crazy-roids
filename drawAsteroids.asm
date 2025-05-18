@@ -44,6 +44,8 @@ drawAsteroids
 drawAsteroidLoop
     push bc
         push hl
+            ld a, (asteroid8BitIndex)
+            ld b, a
             ld hl, asteroidValidMap
 getCurrentValidHLIndexLoop
             inc hl

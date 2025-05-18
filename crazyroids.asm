@@ -23,7 +23,17 @@
 ;;; https://youtube.com/@byteforever7829
 
 ;;; Known bug(s)
-;;; 
+;;; - randomness isn't too good
+;;; - asteroid doesn't stop when hit
+;;; - player only dies if lined up exactly with asteroid
+
+;;  TODO
+;;  - put UFO bonus back in
+;;  - put in power-up bonus like "deflector" sheilds
+;;
+
+
+
 ;some #defines for compatibility with other assemblers
 ;pasmo only accepts DEFINE
 CLS EQU $0A2A
