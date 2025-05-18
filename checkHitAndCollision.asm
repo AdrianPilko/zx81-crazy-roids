@@ -43,7 +43,6 @@ testDEBUGText_NOTHIT
 checkIfMissileHit_FAST    ; prototype, instead of checking all the positions just 
                           ; check if ahead of missile is not blank
 
-
     ;; check if missile is near top of screen, we don't want to get score if
     ;; it hits the top!    
     ld hl, Display+99
@@ -63,65 +62,55 @@ checkIfMissileHit_FAST    ; prototype, instead of checking all the positions jus
     cp 0
     jp nz, fastHit
     xor a
-
     jp fastHitDone
 fastHit
     xor a
     ld (MissileInFlightFlag), a
+ 
+;;; find out which asteroid it was to set valid map
+    ld a, 1
     ld (tempFindAsteroidIndex), a
-
-    ;; work out which asteroid was hit
+    ld hl, asteroidXPositions        
     ld b, TOTAL_NUMBER_OF_ASTEROIDS
-    ld hl, asteroidTopLeftPositions
-    
-fastHitCheckLoop
+findAsteroidLoop1    
     push bc
-        push hl
-            ld de, (currentMissilePosition)
-            sbc hl, de
-            jr nz, fastHitFoundAsteroid
-            jr fastHitNotFoundAsteroid
-fastHitFoundAsteroid
-        pop hl
-        pop bc
+        ld a, (missileXPosition)
+        push af
+            ld a, (hl)    ; x position                
+            ld b, a 
+        pop af         
+        inc hl
+        cp b 
+        jp z, foundIndexAsteroid
+        inc a
+        cp b          
+        jp z, foundIndexAsteroid
+        inc a        
+        cp b         
+        jp z, foundIndexAsteroid
 
-        ;; we can use the loop count in bc to skip to the
-        ;; place in asteroidValidBitMap
-
-        ld hl, asteroidValidMap 
         ld a, (tempFindAsteroidIndex)
-        ld b, a
-        cp 0
-        jr z, skipasteroidIndexLoop
-asteroidIndexLoop
-        inc hl
-        djnz asteroidIndexLoop
-skipasteroidIndexLoop
-        xor a
-        ld (hl), a
- ;       ld bc,620
- ;       ld de, testDEBUGText_HIT
- ;       call printstring  
- ;       call printAsteroidValidStatus       
-
- ;       ld a,(tempFindAsteroidIndex)
- ;       ld de, 760
- ;       call print_number8bits
-
-;stopLoopHere
-;        jr stopLoopHere
-
-        jr drawExplosionPreLoop
-fastHitNotFoundAsteroid
-        inc hl     ; push hl onto the next asteroid position
-        inc hl
-        pop hl 
+        inc a
+        ld (tempFindAsteroidIndex), a
     pop bc
-    ld a, (tempFindAsteroidIndex)
-    inc a 
-    ld (tempFindAsteroidIndex), a
+    djnz findAsteroidLoop1
+    jp fastHitDone
 
-    djnz fastHitCheckLoop
+foundIndexAsteroid
+    pop bc ; because we exited loop abouve early
+    ld hl, asteroidValidMap    
+    ld a, (tempFindAsteroidIndex)
+
+    ld b, a
+    xor a
+findAsteroidLoop2
+    inc hl
+    inc a
+    djnz findAsteroidLoop2
+    dec hl
+
+    xor a           ;;zero a
+    ld (hl), a      ;; now zero asteroidValidMap[tempFindAsteroidIndex]
 
 drawExplosionPreLoop
     ;; draw an explosion
@@ -172,21 +161,29 @@ missileNearTopSkipAll
     ret
 
 
+
+;;; slow version 
+
 checkIfMissileHit
-    ld hl, asteroidValidMap
-    ld (asteroidValidMapPtr), hl
     ld bc, TOTAL_NUMBER_OF_ASTEROIDS
     ld hl, asteroidTopLeftPositions
+    ld a, 1
+    ld (asteroid8BitIndex), a    
 checkHitLoop 
     push bc
+
         push hl
-            ;check if asteroid is valid
-            ld hl, (asteroidValidMapPtr)
-            ld a, (hl)
-        ;pop hl   ; fandangling with stack to maintain consistency
+            ld hl, asteroidValidMap
+            ld a, (asteroid8BitIndex)
+            ld b, a
+getCurrentValidHLIndexHITLoop
+            inc hl
+            djnz getCurrentValidHLIndexHITLoop
+            dec hl
+            ld a, (hl)    ; register a contains the valid 
+        pop hl
         cp 1
         jp nz, noHitMissile
-        pop hl
 
         ld a, (hl)
         ld e, a
@@ -201,23 +198,32 @@ checkHitLoop
             ; compare upper and lower bytes of hl and de
             ld a, h
             cp d
-            jr z, checkNextMissileHit
-            jr noHitMissile
+        pop hl
+        jr z, checkNextMissileHit            
+        jr noHitMissile
 checkNextMissileHit
-            ld a, l
-            cp e
-            jr z, MissileHitAsteroid
-            jr noHitMissile
+        ld a, l
+        cp e
+        jr z, MissileHitAsteroid
+        jr noHitMissile
 
 MissileHitAsteroid
-            ;; missile HIT!!!
-            ld hl, (asteroidValidMapPtr)
-            ld a, 0
-            ld (hl), a   
-
-            ;also if we have hit then disable the missile now!!
+        ;; missile HIT!!!
+        push hl
+            ld hl, asteroidValidMap
+            ld a, (asteroid8BitIndex)
+            ld b, a
+getCurrentHLIndexHITLoop_2
+            inc hl
+            djnz getCurrentHLIndexHITLoop_2
+            dec hl
             xor a
-            ld (MissileInFlightFlag), a
+            ld (hl), a    ; set valid asteroidValidMap[asteroid8BitIndex] to zero
+        pop hl
+
+        ;also if we have hit then disable the missile now!!
+        xor a
+        ld (MissileInFlightFlag), a
         
             ;; draw an explosion
             ld b, 5
@@ -251,11 +257,12 @@ explosionDelayLoop2
         ld a, 2
         jr exitLoopEarlyCheckCollision
 noHitMissile
-            ; increment asteroid valid temp "pointer"
-            ld hl, (asteroidValidMapPtr)
-            ;inc hl
-            ld (asteroidValidMapPtr), hl
-        pop hl      ; restore hl now is next asteroid position
+
+
+    ld a, (asteroid8BitIndex)
+    inc a
+    ld  (asteroid8BitIndex),a
+
     pop bc 
     djnz checkHitLoop
 exitLoopEarlyCheckCollision
@@ -265,8 +272,12 @@ exitLoopEarlyCheckCollision
     ret
 
 
-testCollisionText_done
-    db _T,_E,_S,_T,__,_D,_O,_N,_E,$ff
+testCollisionTextMulti_done
+    db _T,_E,_S,_T,__,_D,_O,_N,_E,__,_M,_U,_L,_T,_I,$ff
+testCollisionTextOne_done
+    db _T,_E,_S,_T,__,_D,_O,_N,_E,__,_O,_N,_E,$ff
+testCollisionTextTop_done
+    db _T,_E,_S,_T,__,_D,_O,_N,_E,__,_T,_O,_P,$ff
 
 test_checkCollisionMulti
     ld hl, Display+1
@@ -274,6 +285,13 @@ test_checkCollisionMulti
     add hl, de
     ld (currentPlayerLocation), hl
 
+    ld a, $09
+    ld (missileXPosition), a
+
+    ld de, 25
+    push af
+        call print_number8bits
+    pop af 
     call initialiseAsteroids
     call initialiseAsteroidValidAllOn 
     call printAsteroidValidStatus
@@ -287,7 +305,7 @@ test_checkCollisionMulti
 testCheckColMissileLoop1
     push bc
         push af
-	        ld b,4
+	        ld b,40
 waitForTVSyncTestCheckCol1
 	        call vsync
 	        djnz waitForTVSyncTestCheckCol1
@@ -299,7 +317,8 @@ waitForTVSyncTestCheckCol1
         call checkIfMissileHit_FAST
         call updateAsteroidsPositions        
         call printAsteroidValidStatus
-        
+        call printAsteroidPoistions
+        call printAsteroidXPositions
         ; if a == 2
         cp 2
         ;pop bc   ; pop bc so it doesn't cause crash when breaking out early
@@ -317,12 +336,15 @@ skipfireMissileAgain
         ld de, 695
         ld bc, (asteroidTopLeftPositions)
 	    call print_number16bits
+        call countNumberValidAsteroids
+        ld de, 29
+        call print_number8bits
     pop bc
     djnz testCheckColMissileLoop1
 testCheckCollisionDone
     call printAsteroidValidStatus
     ld bc,728
-    ld de,testCollisionText_done
+    ld de,testCollisionTextMulti_done
     call printstring
     ret
 
@@ -357,8 +379,7 @@ waitForTVSyncTestCheckColTop1
         call updateMissilePosition
         call checkIfMissileHit_FAST
         ;call updateAsteroidsPositions        ;;; in this mode keep asteroid on top row
-        call printAsteroidValidStatus
-        
+        call printAsteroidValidStatus        
         ; if a == 2
         cp 2
         ;pop bc   ; pop bc so it doesn't cause crash when breaking out early
@@ -381,7 +402,7 @@ skipfireMissileAgainTop
 testCheckCollisionDoneTop
     call printAsteroidValidStatus
     ld bc,728
-    ld de,testCollisionText_done
+    ld de,testCollisionTextTop_done
     call printstring
     ret
 
@@ -436,6 +457,6 @@ waitForTVSyncTestCheckCol2
     djnz testCheckColMissileLoop2
 testCheckCollisionDone2
     ld bc,728
-    ld de,testCollisionText_done
+    ld de,testCollisionTextOne_done
     call printstring
     ret

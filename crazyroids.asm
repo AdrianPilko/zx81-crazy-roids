@@ -23,7 +23,16 @@
 ;;; https://youtube.com/@byteforever7829
 
 ;;; Known bug(s)
-;;; 
+;;; - randomness isn't too good
+;;; - player only dies if lined up exactly with asteroid
+
+;;  TODO
+;;  - put UFO bonus back in
+;;  - put in power-up bonus like "deflector" sheilds
+;;
+
+
+
 ;some #defines for compatibility with other assemblers
 ;pasmo only accepts DEFINE
 CLS EQU $0A2A
@@ -44,7 +53,7 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 8
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 7    ; is only space comfortably for 7
 
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
@@ -52,12 +61,13 @@ SCREEN_WIDTH EQU 32
 SCREEN_HEIGHT EQU 23   ; we can use the full screen becuase we're not using PRINT or PRINT AT ROM subroutines
 MISSILE_COUNTDOWN_INIT EQU 18
 PLAYER_START_POS EQU 637
+PLAYER_X_START_POS EQU 10
 PLAYER_LIVES EQU 3
 ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 2
 
-VSYNCLOOP       EQU      2
+VSYNCLOOP       EQU      1
 
 ; character set definition/helpers
 __:				EQU	$00	;spacja
@@ -178,17 +188,40 @@ Line1Text:      DB $ea                        ; REM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	jp intro_title		; main entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;     call test_Missile
+    jr onlyTestThis
+    call test_initialiseSingleAsteroid
+                   
+    call delaySome
+    call delaySome
+    call delaySome
+    call CLS
+    call test_randAsteroidLocation
+    call delaySome
+    call CLS
+    call test_initialiseAsteroids
+    call delaySome
+    call CLS
+    call test_drawAsteroids
+    call delaySome
+    call CLS    
 
-;     call test_checkCollisionMulti
-     call test_checkCollisionAtTopRow
-
-;    call test_checkCollision_One
-;    call test_initialiseAsteroids
-;    call test_UpdateAsteroids
-;    call test_drawAsteroids
-endTest
-    jr endTest
+    call test_Missile
+    call delaySome
+    call CLS
+onlyTestThis
+    call test_checkCollisionMulti
+    call delaySome
+    call CLS
+    jr onlyTestThis
+    call test_checkCollisionAtTopRow
+    call delaySome
+    call CLS
+    call test_checkCollision_One    
+    call delaySome
+    call CLS
+    call test_UpdateAsteroids
+endTesting_2
+    jr endTesting_2
 ;;; end of test modes    
 
 
@@ -353,6 +386,10 @@ initVariables
     ld de, PLAYER_START_POS
     add hl, de
     ld (currentPlayerLocation), hl
+    ld a, PLAYER_X_START_POS
+    ld (currentPlayerXPos), a
+
+
     call resetJollyRogerPos
 	
 	ld hl, UFOBonusSprite
@@ -428,9 +465,9 @@ resetEvenOddAndSetFlag
     ld a, 1
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-    ;;ld a,(evenOddLoopFlag)
-    ;;ld de, 764
-    ;;call print_number8bits
+    ld a,(evenOddLoopFlag)
+    ld de, 764
+    call print_number8bits
 
 continueWithGameLoop
 
@@ -443,23 +480,27 @@ continueWithGameLoop
     ld a, (gameOverRestartFlag)
     cp 1
     jp z, intro_title
+    
+    ;;ld a, (evenOddLoopFlag)
+    ;;cp 0
+    ;;jr z, skipUFOInGameLoop
 
-
-    ;ld a, (evenOddLoopFlag)
-    ;cp 0
-    ;jr z, skipUFOInGameLoop
-
-    ;call asteroidUFOCountUp
+    call asteroidUFOCountUp
     
     ;ld a, (evenOddLoopFlag)
     ;cp 1
     ;call z, updateAsteroidsPositions
 
-    ;ld a, (UFOValid)
-    ;cp 1
-    ;call z, drawUFOBonus
+    ld a, (UFOValid)
+    cp 1
+    call z, drawUFOBonus
 
 skipUFOInGameLoop
+
+  ;  call printAsteroidValidStatus
+  ;  call printAsteroidPoistions
+
+
     call drawAsteroids
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
@@ -523,6 +564,10 @@ moveLeft
     dec hl
     ld (currentPlayerLocation), hl
 
+    ld a, (currentPlayerXPos)
+    dec a
+    ld (currentPlayerXPos), a
+
 
     ld a, KEYBOARD_READ_PORT_SPACE_TO_B
     in a, (KEYBOARD_READ_PORT)					; read from io port
@@ -544,11 +589,13 @@ moveRight
     jp z, updateRestOfScreen
     ld (playerXPos), a
 
-
-
     ld hl, (currentPlayerLocation)
     inc hl
     ld (currentPlayerLocation), hl
+
+    ld a, (currentPlayerXPos)
+    inc a
+    ld (currentPlayerXPos), a
 
     ld a, KEYBOARD_READ_PORT_SPACE_TO_B
     in a, (KEYBOARD_READ_PORT)					; read from io port
@@ -563,6 +610,9 @@ moveRight
     jr updateRestOfScreen
 
 doFireMissile      ; triggered when jump key pressed just sets the
+
+    ld a, (playerXPos)
+    ld (missileXPosition), a
     call fireMissile
 
 updateRestOfScreen
@@ -578,12 +628,16 @@ updateRestOfScreen
     jp z, skipMissileDraw
     
     call drawMissileAndBlank
-    call checkIfMissileHit_FAST
+    call checkIfMissileHit_FAST    ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
     call updateMissilePosition
-    call checkIfMissileHit_FAST      
-skipMissileDraw
-    call checkIfPlayerHit
+    call checkIfMissileHit_FAST      ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
+skipMissileDraw    
     call updateAsteroidsPositions 
+    call checkIfPlayerHit
+
+    ;call countNumberValidAsteroids
+    ;ld de, 29
+    ;call print_number8bits
     jp gameLoop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -597,22 +651,13 @@ skipMissileDraw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+include utility.asm
 include initAsteroids.asm
 include updateAsteroids.asm
 include drawAsteroids.asm
 include checkHitAndCollision.asm
 include missile.asm
 include player.asm
-
-;updatePirateXPos
-;    ld a, (pirateXPos)
-;    cp 14
-;    jr z, reversePirateDirToNeg
-;    cp 3
-;    jr z, reversePirateDirToPos
-
-;    jr endOfUpdatePirateXPos
 
 asteroidUFOCountUp
     ld a, (UFOBonusCountUp)
@@ -1030,7 +1075,7 @@ drawSprite_OR_ColLoop
 
 printLivesAndScore
     ld a, (playerLives)
-    ld de, 29
+    ld de, 29   
     call print_number8bits
 
     ld bc, 11
@@ -1119,85 +1164,6 @@ awardNewLife
     ld (playerLives),a
 endOfIncreaseScore
     ret
-
-; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
-printstring
-    push de ; preserve de
-    ld hl,Display
-    add hl,bc
-printstring_loop
-    ld a,(de)
-    cp $ff
-    jp z,printstring_end
-    ld (hl),a
-    inc hl
-    inc de
-    jr printstring_loop
-printstring_end
-    pop de  ; preserve de
-    ret
-
-print_number16bits    ; bc stores the 16bits, print b then c, de stores offset from Display
-    ld a, b
-    call print_number8bits
-    ld a, c
-    inc de  ; move de over by 2
-    inc de
-    call print_number8bits
-    ret
-
-
-print_number8bits
-    ld hl, (DF_CC)
-    add hl, de
-    push af ;store the original value of a for later
-    and $f0 ; isolate the first digit
-    rra
-    rra
-    rra
-    rra
-    add a,$1c ; add 28 to the character code
-    ld (hl), a
-    inc hl
-    pop af ; retrieve original value of a
-    and $0f ; isolate the second digit
-    add a,$1c ; add 28 to the character code
-    ld (hl), a
-
-    ret
-
-printNumber
-    ld hl,Display
-    add hl,bc
-printNumber_loop
-    ld a,(de)
-    push af ;store the original value of a for later
-    and $f0 ; isolate the first digit
-    rra
-    rra
-    rra
-    rra
-    add a,$1c ; add 28 to the character code
-    ld (hl), a
-    inc hl
-    pop af ; retrieve original value of a
-    and $0f ; isolate the second digit
-    add a,$1c ; add 28 to the character code
-    ld (hl), a
-    ret
-
-
-;check if TV synchro (FRAMES) happend
-vsync
-	ld a,(FRAMES)
-	ld c,a
-sync
-	ld a,(FRAMES)
-	cp c
-	jr z,sync
-endOfVsync
-	ret
-
 
                 DB $76                        ; Newline
 Line1End

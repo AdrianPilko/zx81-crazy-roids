@@ -31,6 +31,10 @@
 ;; =========
 ;;   - 
 
+
+missileXPosition     ; set this when fired to the current X player location 
+    db 0
+
 drawMissileAndBlank
     ld hl, (currentMissilePosition)
     ld de, 33

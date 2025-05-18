@@ -36,6 +36,8 @@
 PRINT			EQU $10
 PRINTAT			EQU $08F5
 
+asteroid8BitIndex  ; this is a temp index that can be passed to the randAsteroid position subroutine
+    db 0
 asteroidTempPositionStore                   ; used to store current hl in updateAsteroidPositions
     dw 0
 resetAsteroidText
@@ -44,6 +46,8 @@ resetAsteroidText
 updateAsteroidsPositions
     ld b, TOTAL_NUMBER_OF_ASTEROIDS                                 ; we have 8 asteroids on screen at any one time
     ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
+    ld a, 1
+    ld (asteroid8BitIndex), a
 
 updateAsteroidLoop
 
@@ -56,23 +60,42 @@ updateAsteroidLoop
         ld d, a
         inc hl
 
-        push af  
-            push hl                                 ; save hl points to second memory location of locaitons
-                push de 
-                pop hl
-                ld de, -33
-                add hl, de
-                ld hl, Display+1
-                ;ld de, $0321   ;the offset to the lowest row the asteroid should be able to get
+       
+        push hl                                 ; save hl points to second memory location of locaitons
+   ;         push de 
+  ;          pop hl
+ ;           ld de, -33
+;            add hl, de
+            ld hl, Display+1
+            push de   ; save de
                 ld de, $0342   ;the offset to the lowest row the asteroid should be able to get
+                ;ld de, $0273
                 add hl, de
-                push hl
-                pop de
-            pop hl
-        pop af
-        cp d
-        jr nc, resetUpdateAsteroid
+            pop de  ; restore de
 
+            ;
+            ; register de contains the asteroid top left position
+            ; register hl contains the bottom most point we want any asteroid to reach (Display + $0342)
+            LD A, H
+            CP D         ; Compare high bytes first
+            JP C, hl_less      ; HL < DE
+            JP NZ, hl_not_less ; HL > DE (since H ≠ D)
+
+            LD A, L
+            CP E         ; If high bytes are equal, compare low bytes
+            JP C, hl_less      ; HL < DE
+            ; Else HL ≥ DE
+hl_not_less:
+            ; HL is not less than DE
+            ;; just continue to update
+            pop hl
+            jr continueUpdateAsteroid
+hl_less:
+            ; HL is less than DE
+            
+            pop hl
+            jr resetUpdateAsteroid                       
+            
 continueUpdateAsteroid
         push hl                             ; save hl
             dec hl                              ; return hl to previous position
@@ -101,34 +124,36 @@ continueUpdateAsteroid
         inc hl
         jp endLoopUpdateAsteroids
 resetUpdateAsteroid
-    push hl
-        ;; we need to make sure asteroids are at unique positions
-        call randAsteroidLocation
-        ; a now contains the random pos, need to get it in de
-        ld a, (randNextAsteroidPosition)
-        ld d, 0
-        ld e, a    
-        ld hl, Display+1
-        add hl, de
-        ld de, 66
-        add hl, de
-        push hl
-        pop de
+    push hl   ; save hl
+        ld a, (asteroid8BitIndex)
+        call resetAsteroid_HL
     pop hl
-
-    dec hl
-    dec hl   
-
-    ld a, e
-    ld (hl), a
-    inc hl
-    ld a, d
-    ld (hl), a
-    inc hl
     
 endLoopUpdateAsteroids
+
+
+    ld a, (asteroid8BitIndex)
+    inc a
+    ld (asteroid8BitIndex), a
     pop bc
     djnz updateAsteroidLoop
+    ret
+
+
+countNumberValidAsteroids
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS
+    ld hl, asteroidValidMap
+    ld e, 0
+countAsteroidValidLoop
+    ld a, (hl)
+    cp 0
+    jr z, skipIncValidAsteroid
+    inc e
+skipIncValidAsteroid    
+    inc hl
+    djnz countAsteroidValidLoop
+
+    ld a, e  ; a stores the count of valid asteroids on return
     ret
 
 ; in an attempt to improve ability to write relicable code I've added 
@@ -139,7 +164,7 @@ endLoopUpdateAsteroids
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; TEST CODE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; test code
+
 test_UpdateAsteroids
 
     ld de, 166

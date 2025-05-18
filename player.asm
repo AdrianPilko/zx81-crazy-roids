@@ -31,12 +31,16 @@
 ;; =========
 ;;   - add checking of not just direct hit but each of the top 4 positions in the player sprite
 
+
+currentPlayerXPos
+    db 0
+
 checkIfPlayerHit
 
-    ld hl, asteroidValidMap
-    ld (asteroidValidMapPtr), hl
     ld b, TOTAL_NUMBER_OF_ASTEROIDS       ; we have TOTAL_NUMBER_OF_ASTEROIDS asteroids on screen at any one time
     ld hl, asteroidTopLeftPositions         ; load hl with start of asteroid location memory
+    ld a, 1
+    ld (asteroid8BitIndex), a
 
 checkIfPlayerHitLoop
     push bc
@@ -49,9 +53,14 @@ checkIfPlayerHitLoop
         ld (asteroidPosTemp), de
 
         push hl
-            ;check if asteroid is valid
-            ld hl, (asteroidValidMapPtr)
-            ld a, (hl)
+            ld hl, asteroidValidMap
+            ld a, (asteroid8BitIndex)
+            ld b, a            
+getPlayerHitHLIndexLoop
+            inc hl
+            djnz getPlayerHitHLIndexLoop
+            dec hl
+            ld a, (hl)    ; register a contains the valid 
         pop hl
         cp 0
         jp z, skipPlayerHit
@@ -64,8 +73,36 @@ checkIfPlayerHitLoop
             ld de, (asteroidPosTemp)
             sbc hl, de
             push af
-                call z, executeRestartLevel
+                call z, executeRestartLevel                
             pop af
+
+            ld hl, (currentPlayerLocation)
+            ld de, 33
+            sbc hl, de
+            ; check either side - not just direct hit
+            ld de, (asteroidPosTemp)
+            inc de  
+            sbc hl, de
+            push af
+                call z, executeRestartLevel                
+            pop af
+
+            ld hl, (currentPlayerLocation)
+            ld de, 33
+            sbc hl, de
+            ; check either side - not just direct hit
+            ld de, (asteroidPosTemp)
+            dec de
+            dec de  
+            sbc hl, de
+            push af
+                call z, executeRestartLevel                
+            pop af
+
+
+
+
+
         pop hl
         jr z, checkIfPlayerHitEndEarly
 skipPlayerHit
@@ -73,6 +110,9 @@ skipPlayerHit
     djnz checkIfPlayerHitLoop
     jr endOfcheckIfPlayerHit
 checkIfPlayerHitEndEarly
+    ld a, (asteroid8BitIndex)
+    inc a
+    ld (asteroid8BitIndex), a
     pop bc  ; pop here as we exited loop early
 endOfcheckIfPlayerHit
     ret

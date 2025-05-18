@@ -31,8 +31,18 @@
 ;; =========
 ;;   - 
 
-
-
+tempAsteroidXPosition
+    db 0
+randomXPosTableIndex
+    dw 0
+randomPrecalculatedXPos
+    db 9, 6, 12, 16,  20,  24, 26  
+    db 6, 14, 16,  20,  24, 28, 9
+    db 12, 16,  20,  24, 27, 9, 6
+    db 16,  20,  3, 2, 9, 6, 12
+    db 20,  24, 5, 9, 6, 12, 16  
+    db 24, 28, 9, 6, 12, 16, 20   
+    db 28, 9, 6, 7, 16, 20 , 5 
 
 initialise_3_AsteroidValid
       
@@ -89,32 +99,125 @@ setFirstPositionForTest
     ret
 
 
+initialiseSingleAsteroid
+;PURPOSE
+;========
+; initialise one asteroid with index stored in asteroid8BitIndex
+; after this the asteroid will have
+;     X position set - effectively asteroidXPositions[asteroid8BitIndex]
+;     Valid status set - effectively asteroidValidMap[asteroid8BitIndex]
+
+
+    ld a, (asteroid8BitIndex)
+    ld b, a
+    push bc
+        call randAsteroidLocation         
+        ld hl, asteroidTopLeftPositions
+    pop bc
+
+initSingleIncLoop_1
+    inc hl    ; inc twice as asteroid screen location is two bytes
+    inc hl
+    djnz initSingleIncLoop_1
+    dec hl    ; convention is that asteroid8BitIndex has to be one more than required else djnz wraps 255
+    dec hl    ; so dec hl twice at end - I know a bit janky
+    ;; hl now contains the memory location of the asteroid we want to update
+
+   
+    ld d, 0
+    ld e, a
+    push hl
+        ld hl, Display+1
+        add hl, de
+        ld de,66       ; add an extra 33 to keep it 2 off the top - not 1 so blanking works
+        add hl, de
+        push hl
+        pop de
+    pop hl
+
+    ld a, e            ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+    ld (hl), a
+    ld a, d
+    inc hl
+    ld (hl), a    
+
+
+    ;;;; Update valid map
+    ld a, (asteroid8BitIndex)
+    ld b, a  
+    ld hl, asteroidValidMap
+initSingleIncLoop_2
+    inc hl    ; inc twice as asteroid screen location is two bytes
+    djnz initSingleIncLoop_2
+    dec hl    ; convention is that asteroid8BitIndex has to be one more than required else djnz wraps 255
+    ;; hl now contains the memory location of the asteroidValidMap we want to update
+    ld a, 1
+    ld (hl), a
+
+;; update astgeroid x position
+    ld a, (asteroid8BitIndex)
+    ld b, a  
+    ld hl, asteroidXPositions
+initSingleIncLoop_3
+    inc hl    ; inc twice as asteroid screen location is two bytes
+    djnz initSingleIncLoop_3
+    dec hl    ; convention is that asteroid8BitIndex has to be one more than required else djnz wraps 255
+    ;; hl now contains the memory location of the asteroidValidMap we want to update
+    ld a, (tempAsteroidXPosition)
+    ld (hl), a
+
+    ; may as well reset the sprite pointer as well (but affects all asteroids
+    xor a
+    ld (asteroidSpriteCycleCount), a
+    ld hl, asteroidSpriteData4x4
+    ld (asteroidSpritePointer), hl
+
+    ret
+
+
 initialiseAsteroids    
-    ld b, TOTAL_NUMBER_OF_ASTEROIDS ; but only enable 3 - helps with the random placing horizontally
+    call initialiseAsteroidValidAllOn
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS 
     ld hl, asteroidTopLeftPositions
+    ld a, 1
+    ld (asteroid8BitIndex), a
 initAsteroidsLoop
     push bc
         push hl
-            call randAsteroidLocation   
+            ld a, (asteroid8BitIndex)
+            call randAsteroidLocation
+            ld hl, asteroidXPositions
+            push af 
+                ld a, (asteroid8BitIndex)
+                ld b, a
+getCurrentXHLLocationLoop
+                inc hl
+                djnz getCurrentXHLLocationLoop
+                dec hl
+            pop af
+            ld (hl), a
         pop hl
         ld d, 0
         ld e, a
         push hl
             ld hl, Display+1
             add hl, de
-            ld de,66       ; add an extra 33 to keep it 2 off the top - so blank works
+            ld de,66       ; add an extra 33 to keep it 2 off the top - not 1 so blanking works
             add hl, de
             push hl
             pop de
         pop hl
 
-        ld a, e         ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
+        ld a, e            ; store the asteroid location into the hl offsets from asteroidTopLeftPositions
         ld (hl), a
         ld a, d
         inc hl
         ld (hl), a
-        inc hl          ; move to next asteroid location from asteroidTopLeftPositions
+        inc hl             ; move to next asteroid location from asteroidTopLeftPositions
     pop bc
+    ld a, (asteroid8BitIndex)
+    inc a
+    ld (asteroid8BitIndex), a
     djnz initAsteroidsLoop
 
     xor a
@@ -124,39 +227,65 @@ initAsteroidsLoop
     
     ret
 
-randAsteroidLocation
-    call setRandomNumber16
-    cp 28  ; cannot be more than 28 due to 4 byte width of the sprite
-    jr noAdjustRand
-    ld b, 4
-    sub b
-noAdjustRand
-    ld (randNextAsteroidPosition), a
+
+randAsteroidLocation 
+
+;PURPOSE
+;========
+; set "random" position of asteroid numbered asteroid8BitIndex, where asteroid8BitIndex = 0 to TOTAL_NUMBER_OF_ASTEROIDS-1
+; and sets a to that x position as well as randomPrecalculatedXPos
+;
+; clobbers registers hl, a, b
+; 
+; reads:    asteroid8BitIndex,randomPrecalculatedXPos
+; test by:  test_randAsteroidLocation
+
+    call setRandomNumber6
+    ;a now has number 0 to 6 which we'll use to index randomPrecalculatedXPos
+
+    ;; we ideally don't want any overlapping asteroids so check the X positions
+    ld hl, randomPrecalculatedXPos
+
+    ld a, (asteroid8BitIndex)
+    ld b, a
+    inc b
+incIndexOfRandomLoop_outer
+    push bc
+        ld a, (asteroid8BitIndex)
+        ld b, a
+        inc b    ; prevent b being zero
+incIndexOfRandomLoop_inner
+            inc hl
+        djnz incIndexOfRandomLoop_inner
+        inc hl
+    pop bc
+    djnz incIndexOfRandomLoop_outer
+    dec hl   ; we added one to b before to stop zero negative so dec on last hl
+    ld a, (hl)
+    ld (tempAsteroidXPosition), a
     ret
 
 
-setRandomNumber16
+setRandomNumber6
     ld hl, (randomSeed)  ; attempt to set random seed based on time user takes to press start
     inc hl
     ld (randomSeed),hl
     
     ld a, (hl)
-;; limit to 2 to 28
-    cp 2           ; Compare A with 2
-    jr c, limitTo2 ; If A < 2, jump to clamp to 2
-    cp 29       ; Compare A with 28
-    jr nc, limitTo28 ; If A >= 29, jump to clamp to 28
-    ; A is already between 2 and 28 inclusive
+;; limit to 0 to 10 as this is the number of pre calculated random rows in randomPrecalculatedXPos
+    cp 1           ; Compare A with 1
+    jr c, limitTo0 ; If A < 1, jump to clamp to 0
+    cp 7       ; Compare A with 10
+    jr nc, limitTo6 ; If A >= 10, jump to clamp to 9
+    ; A is already between 0 and 9 inclusive
     jr randLimitComplete
-limitTo2:
-    ld a, 2
+limitTo0:
+    ld a, 0
     jr randLimitComplete
-limitTo28:
-    ld a, 28
+limitTo6:
+    ld a, 6
 randLimitComplete
-    ; A is now guaranteed to be between 2 and 28
-
-    ; a now contains random number 0,1,2,3,..,31
+    ; A is now guaranteed to be between 0 and 9
     ret
 
 ; in an attempt to improve ability to write relicable code I've added 
@@ -167,17 +296,131 @@ randLimitComplete
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; TEST CODE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; test code
+
+testInitAstDoneText
+    db _T,_E,_S,_T,__,_I,_N,_I,_T,__, _A,_S,_T,_E,_R,_O,_I,_D,__,_D,_O,_N,_E,$ff
+
 test_initialiseAsteroids
 
-    ;; call the function we're testing
-    call initialiseAsteroidValidAllOn
-    ;call initialiseAValidAlternate
-    call initialiseAsteroids
+    ld b, $ff
+testIniAsteroidLoop
+    push bc
+        ;; call the function we're testing
+        call initialiseAsteroidValidAllOn
+        ;call initialiseAValidAlternate
+        call initialiseAsteroids
+        
+        call printAsteroidPoistions
+        call printAsteroidValidStatus
+        call printAsteroidXPositions
+    pop bc
+    djnz testIniAsteroidLoop
+ 
 
-    ld b, 4
+    ld de, testInitAstDoneText
+    ld bc, 664
+    call printstring
+
+    ret 
+
+printAsteroidValidStatus
+    ;; print valid status of each asteroid
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS    ; we have this many asteroids on screen at any one time
+    ld hl, asteroidValidMap
+    ld de, 33
+testValidPrintAsteroidLoop
+    push bc
+    ld a, (hl)
+    push hl        
+        call print_number8bits
+    pop hl    
+    inc hl
+    inc de
+    inc de
+    inc de
+    pop bc
+    djnz testValidPrintAsteroidLoop
+    ret
+
+
+testSetOneDoneText
+    db _T,_E,_S,_T,__,_I,_N,_I,_T,__, _O,_N,_E,__,_D,_O,_N,_E,$ff
+    
+
+test_initialiseSingleAsteroid
+    ;; test initialising just 3rd asteroid, remeber not zero indexed, 1 to TOTAL_NUMBER_OF_ASTEROIDS inclusive
+    ld a, 3
+    ld (asteroid8BitIndex),a
+
+    call initialiseSingleAsteroid
+
+    call printAsteroidPoistions
+    call printAsteroidValidStatus
+    call printAsteroidXPositions
+
+    ld de, testSetOneDoneText
+    ld bc, 664
+    call printstring
+
+    ret
+
+testRandDoneText
+    db _T,_E,_S,_T,__,_R,_A,_N,_D,__, _A,_S,_T,_E,_R,_O,_I,_D,__,_D,_O,_N,_E,$ff
+
+test_randAsteroidLocation
+
+    ld b, $f
+testRandLoop
+    push bc
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS
+    ld de, 0
+    ld hl, asteroidXPositions 
+    ld a, 1
+    ld (asteroid8BitIndex), a
+test_randAsteroidLoop
+        push bc 
+            push hl
+                push de
+                    ld a, (asteroid8BitIndex)
+                    call randAsteroidLocation                    
+                    push af
+                        ; here checking that a contains the random x position
+                        call print_number8bits
+                    pop af
+                pop de
+                inc de
+                inc de
+                inc de
+            pop hl
+        pop bc
+        ld (hl), a
+        inc hl        
+        ld a, (asteroid8BitIndex)
+        inc a
+        ld (asteroid8BitIndex), a
+    djnz test_randAsteroidLoop
+
+    ;check here that the x positions were stored by randAsteroidLocation
+    call printAsteroidXPositions
+    pop bc
+    djnz testRandLoop
+ 
+    ld de, testRandDoneText
+    ld bc, 169
+    call printstring
+    ret
+
+
+printAsteroidPoistions
+    push bc
+    push hl
+    push af
+    push de
+
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS
     ld hl, asteroidTopLeftPositions
-    ld de, 265  ; position of print initially then inc'd below
+    ld de, 165  ; position of print initially then inc'd below
+
 debugPrintAsteroidPos1stRow
     push bc
         ld a, (hl)
@@ -191,58 +434,78 @@ debugPrintAsteroidPos1stRow
                 call print_number16bits
             pop hl
         pop de  
-        inc de 
-        inc de
-        inc de
-        inc de
-        inc de
+
+        push hl
+            ld hl, 33
+            add hl, de
+            ex de, hl
+        pop hl
     pop bc
     djnz debugPrintAsteroidPos1stRow
     
-    ld b, 4
-    ld de, 298  ; position of print initially then inc'd below
-debugPrintAsteroidPos2ndRow
-    push bc
-        ld a, (hl)
-        ld c, a 
-        inc hl
-        ld a, (hl)
-        ld b, a
-        inc hl
-        push de
-        push hl
-            call print_number16bits
-        pop hl
-        pop de  
-        inc de 
-        inc de
-        inc de
-        inc de
-        inc de
+    pop de
+    pop af
+    pop hl
     pop bc
-    djnz debugPrintAsteroidPos2ndRow
+    ret
 
-    call printAsteroidValidStatus
-
-endTestHaltLoop
-    jp   endTestHaltLoop 
-    ret ; never gets here
-
-printAsteroidValidStatus
-    ;; print valid status of each asteroid
-    ld b, 8                                 ; we have 8 asteroids on screen at any one time
-    ld hl, asteroidValidMap
-    ld de, 1
-testValidPrintAsteroidLoop
-    push bc
-    ld a, (hl)
-    push hl        
-        call print_number8bits
-    pop hl    
+printAsteroidXPositions
+    ld hl, asteroidXPositions
+    ld b, TOTAL_NUMBER_OF_ASTEROIDS
+    ld de, 66
+printAsteroidXPosLoop    
+    push hl
+        push bc
+            push de        
+                ld a, (hl)
+                call print_number8bits
+            pop de
+            inc de
+            inc de
+            inc de    
+        pop bc
+    pop hl
     inc hl
-    inc de
-    inc de
-    inc de
+    djnz printAsteroidXPosLoop
+    ret
+
+
+printDebugRandAsteroid
+    push hl
+    push de
+    push bc
+    push af
+        ld de, 99
+        ld a, (hl)
+        call print_number8bits
+    pop af
     pop bc
-    djnz testValidPrintAsteroidLoop
+    pop de
+    pop hl
+
+    push hl
+    push de
+    push bc
+    push af
+        ld de, 132
+        ld a, (randNextAsteroidPosition)
+        call print_number8bits
+    pop af
+    pop bc
+    pop de
+    pop hl
+
+
+    push hl
+    push de
+    push bc
+    push af
+        ld de, 165
+        push hl
+        pop bc
+        call print_number16bits
+    pop af
+    pop bc
+    pop de
+    pop hl
     ret
