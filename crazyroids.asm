@@ -53,7 +53,7 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 7    ; is only space comfortably for 7
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 5 
 
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
@@ -269,7 +269,7 @@ intro_title
     ld (gameOverRestartFlag), a
     ld (last_score_mem_tens),a
     ld (last_score_mem_hund),a
-    ld (sharkPosX), a
+    ld (UFOXPosition), a
     ld (UFOValid), a
     ld (UFOBonusCountUp), a
 
@@ -670,7 +670,7 @@ triggerUFO
     xor a
     ld (UFOBonusCountUp), a
     ld a, 24
-    ld (sharkPosX), a
+    ld (UFOXPosition), a
     ld a, 1
     ld (UFOValid), a
 
@@ -950,7 +950,7 @@ resetSharkSpriteSprite
 continueDrawShark
     xor a
     ld d, a
-    ld a, (sharkPosX)
+    ld a, (UFOXPosition)
     ld e, a
     ld hl, Display+1
     add hl, de
@@ -964,14 +964,14 @@ continueDrawShark
     call drawSprite
 
 
-    ld a, (sharkPosX)
+    ld a, (UFOXPosition)
     dec a
     cp 1
     jr z, noDrawSharkAndSetInvalid
-    ld (sharkPosX), a
+    ld (UFOXPosition), a
     xor a
     ld d, a
-    ld a, (sharkPosX)
+    ld a, (UFOXPosition)
     ld e, a
     ld hl, Display+1
     add hl, de
@@ -987,10 +987,10 @@ noDrawSharkAndSetInvalid
     xor a
     ld (UFOValid), a
     ld a, 1
-    ld (sharkPosX), a
+    ld (UFOXPosition), a
     xor a
     ld d, a
-    ld a, (sharkPosX)
+    ld a, (UFOXPosition)
     ld e, a
     ld hl, Display+1
     add hl, de
@@ -1419,7 +1419,7 @@ enemySprite5by8Blank
     DB 0, 0, 0 ,0, 0
 bossLevelFlag
     DB 0
-sharkPosX
+UFOXPosition
     DB 0
 sharkAbsoluteScreenPos
     DW 0

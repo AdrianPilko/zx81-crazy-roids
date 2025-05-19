@@ -52,15 +52,27 @@ checkIfMissileHit_FAST    ; prototype, instead of checking all the positions jus
 
     ;; we're checking for anything centred in next row up, so -32, -31 (not -33)
     ld hl, (currentMissilePosition)
-    ld de, -32                     
+    ld de, -66                 
     add hl, de
     ld a, (hl)
     cp 0
     jp nz, fastHit
-    inc hl          ; no need todo the "add" again, just inc by 1
+    inc hl
+
     ld a, (hl)
     cp 0
     jp nz, fastHit
+    inc hl
+
+    ld a, (hl)
+    cp 0
+    jp nz, fastHit
+    inc hl
+
+    ld a, (hl)
+    cp 0
+    jp nz, fastHit
+
     xor a
     jp fastHitDone
 fastHit
@@ -75,6 +87,7 @@ fastHit
 findAsteroidLoop1    
     push bc
         ld a, (missileXPosition)
+        dec a
         push af
             ld a, (hl)    ; x position                
             ld b, a 
@@ -94,6 +107,23 @@ findAsteroidLoop1
         ld (tempFindAsteroidIndex), a
     pop bc
     djnz findAsteroidLoop1
+
+;;; also need to check if it hit UFO!!
+    ld a, (missileXPosition)
+    push af
+        ld a, (UFOXPosition)
+        ld b, a 
+    pop af         
+    cp b     
+    jp z, drawExplosionPreLoop
+    inc a
+    cp b     
+    jp z, drawExplosionPreLoop
+    inc a
+    cp b     
+    jp z, drawExplosionPreLoop
+           
+    ;;; not matched anything
     jp fastHitDone
 
 foundIndexAsteroid
