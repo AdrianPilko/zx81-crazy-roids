@@ -114,14 +114,14 @@ findAsteroidLoop2
 
 drawExplosionPreLoop
     ;; draw an explosion
-    ld b, 5
+    ld b, 4
     ld hl, explsion4x4
 explosionDrawLoop_FAST
     push bc
         push hl
             push hl
                 ld hl, (currentMissilePosition)
-                ld de, -66
+                ld de, -99
                 add hl, de
                 push hl 
                 pop de
@@ -130,14 +130,14 @@ explosionDrawLoop_FAST
             ld c, 4
             ld b, 4
             call drawSprite
-            ld b, 64
-explosionDelayLoop_FAST
-            push bc
-            ld b, 64
+            ld b, 255
 explosionDelayLoop2_FAST
-                djnz explosionDelayLoop2_FAST
-            pop bc
-            djnz explosionDelayLoop_FAST
+            rld  ; waste some cycles  18 T-states * 5 * 255 =  -> 22950 / 3250000 ~ 0.007seconds (if z80 was doing nothing else!)
+            rld
+            rld
+            rld
+            rld
+            djnz explosionDelayLoop2_FAST
         pop hl
         ld de, 16
         add hl, de
@@ -171,7 +171,6 @@ checkIfMissileHit
     ld (asteroid8BitIndex), a    
 checkHitLoop 
     push bc
-
         push hl
             ld hl, asteroidValidMap
             ld a, (asteroid8BitIndex)
@@ -266,9 +265,9 @@ noHitMissile
     pop bc 
     djnz checkHitLoop
 exitLoopEarlyCheckCollision
-    ;ld bc,620
-    ;ld de, testDEBUGText_NOTHIT
-    ;call printstring        
+    ld bc,620
+    ld de, testDEBUGText_NOTHIT
+    call printstring        
     ret
 
 

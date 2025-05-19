@@ -67,7 +67,7 @@ ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 2
 
-VSYNCLOOP       EQU      1
+VSYNCLOOP       EQU      2
 
 ; character set definition/helpers
 __:				EQU	$00	;spacja
@@ -1484,10 +1484,6 @@ randomSeed
     DW 0
 asteroidTopLeftPositions        ; these are the offsets from Display
     DW 0,0,0,0,0,0,0,0
-;asteroidValidBitMapMask         ; valid asteroids "bitmap", we're having 8 asteroids so one bit per astreroid
- ;   DB 0
-
-
 
 LivesText
     DB _L,_I,_V,_E,_S,_EQ,$ff
@@ -1513,7 +1509,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_5,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_4,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_5,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 
