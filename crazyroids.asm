@@ -53,7 +53,7 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 5 
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 4
 
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
@@ -497,18 +497,6 @@ continueWithGameLoop
 
 skipUFOInGameLoop
 
-  ;  call printAsteroidValidStatus
-  ;  call printAsteroidPoistions
-
-
-    call drawAsteroids
-    ld de, (currentPlayerLocation)
-    ld hl, blankSprite
-    ld c, 4
-    ld b, 4
-    call drawSprite
-    call printLivesAndScore
-
 ; keyboard layout for reading keys on ZX81
 ; BIT   left block      right block  BIT
 ; off                                off in <port>, when ld a, <port>
@@ -559,6 +547,11 @@ moveLeft
     jp z, updateRestOfScreen
     ld (playerXPos), a
 
+    ld de, (currentPlayerLocation)
+    ld hl, blankSprite
+    ld c, 4
+    ld b, 4
+    call drawSprite
 
     ld hl, (currentPlayerLocation)
     dec hl
@@ -589,6 +582,12 @@ moveRight
     jp z, updateRestOfScreen
     ld (playerXPos), a
 
+    ld de, (currentPlayerLocation)
+    ld hl, blankSprite
+    ld c, 4
+    ld b, 4
+    call drawSprite    
+
     ld hl, (currentPlayerLocation)
     inc hl
     ld (currentPlayerLocation), hl
@@ -610,34 +609,30 @@ moveRight
     jr updateRestOfScreen
 
 doFireMissile      ; triggered when jump key pressed just sets the
-
     ld a, (playerXPos)
     ld (missileXPosition), a
     call fireMissile
 
 updateRestOfScreen
-
     ld hl, (playerSpritePointer)
     ld de, (currentPlayerLocation)
     ld c, 4
     ld b, 4
     call drawSprite
 
-    ld a, (MissileInFlightFlag)
-    cp 0
-    jp z, skipMissileDraw
-    
-    call drawMissileAndBlank
+    call drawAsteroids
     call checkIfMissileHit_FAST    ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
-    call updateMissilePosition
-    call checkIfMissileHit_FAST      ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
-skipMissileDraw    
     call updateAsteroidsPositions 
     call checkIfPlayerHit
+    call updateMissilePosition
+    call drawMissileAndBlank
+    call checkIfMissileHit_FAST      ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
+skipMissileDraw    
+    
 
-    ;call countNumberValidAsteroids
-    ;ld de, 29
-    ;call print_number8bits
+    call printLivesAndScore
+
+
     jp gameLoop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

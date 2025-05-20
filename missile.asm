@@ -36,6 +36,10 @@ missileXPosition     ; set this when fired to the current X player location
     db 0
 
 drawMissileAndBlank
+    ld a, (MissileInFlightFlag)
+    cp 0
+    jr z, noDrawMissile
+
     ld hl, (currentMissilePosition)
     ld de, 33
     add hl, de
@@ -50,6 +54,7 @@ drawMissileAndBlank
     ld c, 4
     ld b, 4
     call drawSprite
+noDrawMissile    
     ret
 
 fireMissile
