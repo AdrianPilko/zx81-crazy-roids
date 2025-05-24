@@ -18,6 +18,10 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ; SOFTWARE.
 
+;; KNOWN BUGS
+;; ==========
+;;   - if missile shot
+
 ;;; Classic shootem up game like asteroids, but more crazy
 ;;;
 ;;; https://youtube.com/@byteforever7829
@@ -67,68 +71,9 @@ ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 2
 
-VSYNCLOOP       EQU      2
+VSYNCLOOP       EQU      3
 
-; character set definition/helpers
-__:				EQU	$00	;spacja
-_QT:			EQU	$0B	;"
-_PD:			EQU	$0C	;funt
-_SD:			EQU	$0D	;$
-_CL:			EQU	$0E	;:
-_QM:			EQU	$0F	;?
-_OP:			EQU	$10	;(
-_CP:			EQU	$11	;)
-_GT:			EQU	$12	;>
-_LT:			EQU	$13	;<
-_EQ:			EQU	$14	;=
-_PL:			EQU	$15	;+
-_MI:			EQU	$16	;-
-_AS:			EQU	$17	;*
-_SL:			EQU	$18	;/
-_SC:			EQU	$19	;;
-_CM:			EQU	$1A	;,
-_DT:			EQU	$1B	;.
-_NL:			EQU	$76	;NEWLINE
-
-_BL             EQU $80; solid block
-
-_0				EQU $1C
-_1				EQU $1D
-_2				EQU $1E
-_3				EQU $1F
-_4				EQU $20
-_5				EQU $21
-_6				EQU $22
-_7				EQU $23
-_8				EQU $24
-_9				EQU $25
-_A				EQU $26
-_B				EQU $27
-_C				EQU $28
-_D				EQU $29
-_E				EQU $2A
-_F				EQU $2B
-_G				EQU $2C
-_H				EQU $2D
-_I				EQU $2E
-_J				EQU $2F
-_K				EQU $30
-_L				EQU $31
-_M				EQU $32
-_N				EQU $33
-_O				EQU $34
-_P				EQU $35
-_Q				EQU $36
-_R				EQU $37
-_S				EQU $38
-_T				EQU $39
-_U				EQU $3A
-_V				EQU $3B
-_W				EQU $3C
-_X				EQU $3D
-_Y				EQU $3E
-_Z				EQU $3F
-
+include keyboardequ.asm
 
 ;;;; this is the whole ZX81 runtime system and gets assembled and
 ;;;; loads as it would if we just powered/booted into basic
@@ -614,19 +559,14 @@ doFireMissile      ; triggered when jump key pressed just sets the
     call fireMissile
 
 updateRestOfScreen
-    ld hl, (playerSpritePointer)
-    ld de, (currentPlayerLocation)
-    ld c, 4
-    ld b, 4
-    call drawSprite
-
+    call drawPlayer
+    call updateAsteroidsPositions     
     call drawAsteroids
-    call checkIfMissileHit_FAST    ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
-    call updateAsteroidsPositions 
-    call checkIfPlayerHit
     call updateMissilePosition
+    call checkIfMissileHit_FAST     
+    call checkIfPlayerHit
     call drawMissileAndBlank
-    call checkIfMissileHit_FAST      ; this requires tempFindAsteroidIndex to be set (somehow!) to the x position of the missile
+    
 skipMissileDraw    
     
 
@@ -653,24 +593,7 @@ include drawAsteroids.asm
 include checkHitAndCollision.asm
 include missile.asm
 include player.asm
-
-asteroidUFOCountUp
-    ld a, (UFOBonusCountUp)
-    inc a
-    ld (UFOBonusCountUp), a
-    cp 128
-    jr z, triggerUFO
-    jr notriggerUFO
-triggerUFO
-    xor a
-    ld (UFOBonusCountUp), a
-    ld a, 24
-    ld (UFOXPosition), a
-    ld a, 1
-    ld (UFOValid), a
-
-notriggerUFO
-    ret
+include ufo.asm
 
 updateJollyRoger
     ld a, (jollyRogerXPos)
@@ -919,83 +842,6 @@ continueGampLoop
     ret
 
 checkForSharkHit
-    ret
-
-drawUFOBonus
-
-;debugBackOne
-;   jp debugBackOne
-
-   ld a, (sharkSpriteCycleCount)
-   inc a
-   cp 4
-   
-   jr z, resetSharkSpriteSprite
-   ld (sharkSpriteCycleCount), a
-   ld hl, (UFOBonusSpritePointer)
-   ld de, 32
-   add hl, de
-   ld (UFOBonusSpritePointer), hl
-   jr continueDrawShark
-resetSharkSpriteSprite
-   xor a
-   ld (sharkSpriteCycleCount), a
-   ld hl, UFOBonusSprite
-   ld (UFOBonusSpritePointer), hl
-continueDrawShark
-    xor a
-    ld d, a
-    ld a, (UFOXPosition)
-    ld e, a
-    ld hl, Display+1
-    add hl, de
-    ld de, 33
-    add hl, de
-    ld (sharkAbsoluteScreenPos), hl
-    ex de, hl
-    ld hl, blankSprite
-    ld c, 8
-    ld b, 4
-    call drawSprite
-
-
-    ld a, (UFOXPosition)
-    dec a
-    cp 1
-    jr z, noDrawSharkAndSetInvalid
-    ld (UFOXPosition), a
-    xor a
-    ld d, a
-    ld a, (UFOXPosition)
-    ld e, a
-    ld hl, Display+1
-    add hl, de
-    ld de, 33
-    add hl, de
-    ex de, hl
-    ld hl, (UFOBonusSpritePointer)
-    ld c, 8
-    ld b, 4
-    call drawSprite
-    jr endDrawUFOBonus
-noDrawSharkAndSetInvalid
-    xor a
-    ld (UFOValid), a
-    ld a, 1
-    ld (UFOXPosition), a
-    xor a
-    ld d, a
-    ld a, (UFOXPosition)
-    ld e, a
-    ld hl, Display+1
-    add hl, de
-    ld de, 33
-    add hl, de
-    ld hl, blankSprite
-    ld c, 8
-    ld b, 4
-    call drawSprite
-endDrawUFOBonus
     ret
 
 resetJollyRogerPos

@@ -31,7 +31,11 @@
 ;; =========
 ;;   - in the fast hit detection need to make sure it doesn't check the top row of screen
 ;;     as that's where the game info's displayed
-
+;;
+;;  BUGS
+;;  ====
+;;   - when firing a missile if the player x position (and you would think) the mnissile x position is greater than 
+;;      two thirds the screen wideth, then the missile stops and won't go all way up
 
 tempFindAsteroidIndex
     db 0
@@ -43,6 +47,15 @@ testDEBUGText_NOTHIT
 checkIfMissileHit_FAST    ; prototype, instead of checking all the positions just 
                           ; check if ahead of missile is not blank
 
+    ;; check if missile in MissileInFlightFlag set
+
+    ld a, (MissileInFlightFlag)
+    cp 0    
+    jr nz, contCheckIfMissileHit_FAST
+    ret
+
+contCheckIfMissileHit_FAST
+
     ;; check if missile is near top of screen, we don't want to get score if
     ;; it hits the top!    
     ld hl, Display+99
@@ -50,26 +63,26 @@ checkIfMissileHit_FAST    ; prototype, instead of checking all the positions jus
     sbc hl, de
     jp nc, missileNearTopSkipAll
 
-    ;; we're checking for anything centred in next row up, so -32, -31 (not -33)
+    ;; we're checking for anything centred in next row up
     ld hl, (currentMissilePosition)
-    ld de, -66                 
+    ld de, -33                 
     add hl, de
     ld a, (hl)
     cp 0
     jp nz, fastHit
-    inc hl
 
-    ld a, (hl)
+    inc hl
+    ld a, (hl)  
     cp 0
     jp nz, fastHit
-    inc hl
 
-    ld a, (hl)
+    inc hl
+    ld a, (hl)  
     cp 0
     jp nz, fastHit
-    inc hl
 
-    ld a, (hl)
+    inc hl
+    ld a, (hl)  
     cp 0
     jp nz, fastHit
 
@@ -99,6 +112,9 @@ findAsteroidLoop1
         cp b          
         jp z, foundIndexAsteroid
         inc a        
+        cp b         
+        jp z, foundIndexAsteroid        
+        inc a
         cp b         
         jp z, foundIndexAsteroid
 
@@ -151,7 +167,7 @@ explosionDrawLoop_FAST
         push hl
             push hl
                 ld hl, (currentMissilePosition)
-                ld de, -99
+                ld de, -132
                 add hl, de
                 push hl 
                 pop de
@@ -175,7 +191,7 @@ explosionDelayLoop2_FAST
     djnz explosionDrawLoop_FAST            
 
     ld de, (currentMissilePosition)
-    ld hl, -99
+    ld hl, -132
     add hl, de
     ex de, hl
     ld hl, blankSprite
@@ -325,8 +341,6 @@ test_checkCollisionMulti
     call initialiseAsteroidValidAllOn 
     call printAsteroidValidStatus
     call setFirstPositionForTest      ; set to same as the misile "X" position
-
-    call drawAsteroids
     call fireMissile
 
     ld b, $ff                ; loop update missile for more than screen hieght
@@ -339,12 +353,16 @@ waitForTVSyncTestCheckCol1
 	        call vsync
 	        djnz waitForTVSyncTestCheckCol1
         pop af
+
+        ;; the code here should be used as basis for normal game loop
+        call updateAsteroidsPositions     
         call drawAsteroids
-        call drawMissileAndBlank
-        call checkIfMissileHit_FAST
         call updateMissilePosition
-        call checkIfMissileHit_FAST
-        call updateAsteroidsPositions        
+        call checkIfMissileHit_FAST     
+        call checkIfPlayerHit
+        call drawMissileAndBlank
+
+
         call printAsteroidValidStatus
         call printAsteroidPoistions
         call printAsteroidXPositions

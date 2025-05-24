@@ -116,3 +116,12 @@ checkIfPlayerHitEndEarly
     pop bc  ; pop here as we exited loop early
 endOfcheckIfPlayerHit
     ret
+
+
+drawPlayer  
+    ld hl, (playerSpritePointer)
+    ld de, (currentPlayerLocation)
+    ld c, 4
+    ld b, 4
+    call drawSprite
+    ret
