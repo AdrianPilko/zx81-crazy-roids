@@ -31,10 +31,9 @@
 ;;; - player only dies if lined up exactly with asteroid
 
 ;;  TODO
-;;  - put UFO bonus back in
 ;;  - put in power-up bonus like "deflector" sheilds
-;;
-
+;;  - add levels and bigger score if hit UFO
+;;  - add multiple missiles
 
 
 ;some #defines for compatibility with other assemblers
@@ -57,7 +56,7 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 4
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 7
 
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
@@ -71,7 +70,7 @@ ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 2
 
-VSYNCLOOP       EQU      3
+VSYNCLOOP       EQU      2
 
 include keyboardequ.asm
 
@@ -410,10 +409,6 @@ resetEvenOddAndSetFlag
     ld a, 1
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-    ld a,(evenOddLoopFlag)
-    ld de, 764
-    call print_number8bits
-
 continueWithGameLoop
 
     ld a, (restartLevelFlag)
@@ -567,6 +562,11 @@ updateRestOfScreen
     call checkIfPlayerHit
     call drawMissileAndBlank
     
+    ;call printAsteroidValidStatus
+    ;call printAsteroidPoistions
+    ;call printAsteroidXPositions
+    ;call printMisilePosition
+
 skipMissileDraw    
     
 
@@ -1350,7 +1350,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_5,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_5,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_6,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 

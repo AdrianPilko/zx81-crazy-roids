@@ -89,9 +89,6 @@ contCheckIfMissileHit_FAST
     xor a
     jp fastHitDone
 fastHit
-    xor a
-    ld (MissileInFlightFlag), a
- 
 ;;; find out which asteroid it was to set valid map
     ld a, 1
     ld (tempFindAsteroidIndex), a
@@ -143,6 +140,9 @@ findAsteroidLoop1
     jp fastHitDone
 
 foundIndexAsteroid
+    xor a
+    ld (MissileInFlightFlag), a
+
     pop bc ; because we exited loop abouve early
     ld hl, asteroidValidMap    
     ld a, (tempFindAsteroidIndex)
@@ -271,7 +271,7 @@ getCurrentHLIndexHITLoop_2
         ld (MissileInFlightFlag), a
         
             ;; draw an explosion
-            ld b, 5
+            ld b, 3
             ld hl, explsion4x4
 explosionDrawLoop
             push bc
@@ -280,10 +280,10 @@ explosionDrawLoop
                     ld c, 4
                     ld b, 4
                     call drawSprite
-                    ld b, 32
+                    ld b, 8
 explosionDelayLoop
                     push bc
-                    ld b, 32
+                    ld b, 8
 explosionDelayLoop2
                         djnz explosionDelayLoop2
                     pop bc

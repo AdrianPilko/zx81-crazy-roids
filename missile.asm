@@ -110,6 +110,16 @@ noMissileUpClearMissile
 noMissileUpdate
     ret
 
+printMisilePosition   ; and missile in flight flag debug
+    ld bc, (currentMissilePosition)    
+    ld de, 727
+    call print_number16bits
+    ld a, (MissileInFlightFlag)
+    ld de, 760
+    call print_number8bits
+    ret
+
+
 testMissileText_done
     db _T,_E,_S,_T,__,_D,_O,_N,_E,$ff
 
