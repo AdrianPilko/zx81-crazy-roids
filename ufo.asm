@@ -35,7 +35,7 @@ asteroidUFOCountUp
     ld a, (UFOBonusCountUp)
     inc a
     ld (UFOBonusCountUp), a
-    cp 128
+    cp 254
     jr z, triggerUFO
     jr notriggerUFO
 triggerUFO

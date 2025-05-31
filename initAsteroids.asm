@@ -280,7 +280,7 @@ setRandomNumber6
 ;; limit to 0 to 10 as this is the number of pre calculated random rows in randomPrecalculatedXPos
     cp 1           ; Compare A with 1
     jr c, limitTo0 ; If A < 1, jump to clamp to 0
-    cp 7       ; Compare A with 10
+    cp 10       ; Compare A with 10
     jr nc, limitTo6 ; If A >= 10, jump to clamp to 9
     ; A is already between 0 and 9 inclusive
     jr randLimitComplete
@@ -288,7 +288,7 @@ limitTo0:
     ld a, 0
     jr randLimitComplete
 limitTo6:
-    ld a, 6
+    ld a, 9
 randLimitComplete
     ; A is now guaranteed to be between 0 and 9
     ret

@@ -132,9 +132,6 @@ endDrawAstLoop
 resetAsteroid_HL   ; this needs asteroid8BitIndex set to the index (indexed from 1 to the asteroid to update)
     push hl        
         call initialiseSingleAsteroid    
-;        ld bc,728
-;        ld de,asteroidResetDebugText
-;        call printstring
     pop hl
     ret
 

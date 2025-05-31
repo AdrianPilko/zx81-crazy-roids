@@ -28,7 +28,7 @@
 ;;  2) make randomness much better
 ;;  3) make it so you can have power ups and possible bonus "crates" falling which are the boinus power up or extra life
 ;;  4) extra levels and difficulty rating and difficulty increase
-;;  5) make UFO bonus and asteroids run half rate of everything else (especially the missile(s))
+;;  5) ((DONE)) make UFO bonus and asteroids run slower rate of everything else (especially the missile(s))
 ;;  6) make the sprites draw smoothly off the edge (especially the UFO bonus)
 ;;  7) have multiple missiles in flight at once
 
@@ -45,14 +45,12 @@
 ;;  - add levels and bigger score if hit UFO
 ;;  - add multiple missiles
 
-
-;some #defines for compatibility with other assemblers
-;pasmo only accepts DEFINE
 CLS EQU $0A2A
 
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 3     ; self explanatory, but max of 8 allowed with current memory "allocation"
-VSYNCLOOP                  EQU 5     ; this essentially controls how fast the game runs, the lower the number (down to 1 min) the faster it is
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 6     ; self explanatory, but max of 8 allowed with current memory "allocation"
+VSYNCLOOP                  EQU 1     ; this essentially controls how fast the game runs, the lower the number (down to 1 min) the faster it is
+LEVEL_COUNT_DOWN_INIT      EQU 3    ; this is how fast the asteroids come down the screen, higher number the slower they move
 
 KEYBOARD_READ_PORT_P_TO_Y	EQU $DF
 ; for start key
@@ -75,7 +73,6 @@ PLAYER_START_POS EQU 637
 PLAYER_X_START_POS EQU 10
 PLAYER_LIVES EQU 3
 ASTEROID_START_POS EQU 55
-LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 2
 
 
@@ -371,13 +368,8 @@ initVariables
     ld a, (score_mem_hund)
     ld (last_score_mem_hund),a
 
-    ;call initialiseAsteroidValidAllOn
-    ;call initialise_3_AsteroidValid
     call initialiseFirstAsteroidValid
     call initialiseAsteroids
-
-    ;;ld hl, $00 
-    ;;ld (randomSeed), hl     
 
     xor a
     ld (asteroidSpriteCycleCount), a
@@ -405,10 +397,6 @@ waitForTVSync
     xor a
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-    ;;ld a,(evenOddLoopCount)
-    ;;ld de, 760
-    ;;call print_number8bits
-
     jr continueWithGameLoop
 
 resetEvenOddAndSetFlag
@@ -428,16 +416,12 @@ continueWithGameLoop
     ld a, (gameOverRestartFlag)
     cp 1
     jp z, intro_title
-    
-    ;;ld a, (evenOddLoopFlag)
-    ;;cp 0
-    ;;jr z, skipUFOInGameLoop
-
+        
     call asteroidUFOCountUp
     
-    ;ld a, (evenOddLoopFlag)
-    ;cp 1
-    ;call z, updateAsteroidsPositions
+    ld a, (evenOddLoopFlag)
+    cp 0
+    jr z, skipUFOInGameLoop
 
     ld a, (UFOValid)
     cp 1
@@ -563,7 +547,18 @@ doFireMissile      ; triggered when jump key pressed just sets the
 
 updateRestOfScreen
     call drawPlayer
-    call updateAsteroidsPositions     
+    
+    ld a,(evenOddLoopFlag)
+    ld de, 760
+    call print_number8bits
+
+
+    ld a, (evenOddLoopFlag)
+    cp 0
+    jr z, skipAsteroidUpdate
+
+    call updateAsteroidsPositions         
+skipAsteroidUpdate    
     call drawAsteroids
     call updateMissilePosition
     call checkIfMissileHit_FAST     
@@ -675,6 +670,9 @@ executeRestartLevel
     ld (restartLevelFlag), a
     ld (UFOValid), a
     ld (UFOBonusCountUp), a
+
+    call initialiseFirstAsteroidValid
+    call initialiseAsteroids
 
     call CLS
     ; draw top line where lives and score go
@@ -1358,7 +1356,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_5,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_6,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_1,_DT,_0,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 
