@@ -548,9 +548,9 @@ doFireMissile      ; triggered when jump key pressed just sets the
 updateRestOfScreen
     call drawPlayer
     
-    ld a,(evenOddLoopFlag)
-    ld de, 760
-    call print_number8bits
+    ;ld a,(evenOddLoopFlag)
+    ;ld de, 760
+    ;call print_number8bits
 
 
     ld a, (evenOddLoopFlag)
@@ -1338,7 +1338,7 @@ TopLineText
     DB _S,_C,_O,_R,_E,_CL,__,__,__,__,__,__,__,_L,_E,_V,_E,_L,_CL,__,__,__,_L,_I,_V,_E,_S,_CL,__,__,__,$ff
 
 title_screen_txt
-	DB	_Z,_X,_8,_1,__,_C,_R,_A,_Z,_Y,$16,_R,_O,_I,_D,_S,$ff
+	DB	0,0,_Z,_X,_8,_1,__,_C,_R,_A,_Z,_Y,$16,_R,_O,_I,_D,_S,$ff
 keys_screen_txt_1
 	DB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,_P,__,_R,_I,_G,_H,_T,$ff
 keys_screen_txt_2
