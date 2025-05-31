@@ -20,7 +20,17 @@
 
 ;; KNOWN BUGS
 ;; ==========
-;;   - if missile shot
+;;  sometimes restarting game player immediately dies - feels like a reset of the asteroids needed to give a chance
+;;
+;; TODO 
+;; ====
+;;  1) need to have multi updates for things like annimation of missile hitting asteroid so there's no glitch (HARD)
+;;  2) make randomness much better
+;;  3) make it so you can have power ups and possible bonus "crates" falling which are the boinus power up or extra life
+;;  4) extra levels and difficulty rating and difficulty increase
+;;  5) make UFO bonus and asteroids run half rate of everything else (especially the missile(s))
+;;  6) make the sprites draw smoothly off the edge (especially the UFO bonus)
+;;  7) have multiple missiles in flight at once
 
 ;;; Classic shootem up game like asteroids, but more crazy
 ;;;
@@ -41,10 +51,8 @@
 CLS EQU $0A2A
 
 
-;DEFINE DEBUG_PRINT_PIRATE_CYCLE
-;DEFINE DEBUG_PIRATE_DIR
-;DEFINE DEBUG_NO_MOVE_PIRATE  1
-;DEFINE DEBUG_START_PIRATES_LOWER
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 3     ; self explanatory, but max of 8 allowed with current memory "allocation"
+VSYNCLOOP                  EQU 5     ; this essentially controls how fast the game runs, the lower the number (down to 1 min) the faster it is
 
 KEYBOARD_READ_PORT_P_TO_Y	EQU $DF
 ; for start key
@@ -56,7 +64,7 @@ KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
 ; keyboard q to t
 KEYBOARD_READ_PORT_Q_TO_T EQU $FB
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 7
+
 
 ; starting port numbner for keyboard, is same as first port for shift to v
 KEYBOARD_READ_PORT EQU $FE
@@ -70,7 +78,7 @@ ASTEROID_START_POS EQU 55
 LEVEL_COUNT_DOWN_INIT EQU 4
 LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 2
 
-VSYNCLOOP       EQU      2
+
 
 include keyboardequ.asm
 
