@@ -48,7 +48,7 @@
 CLS EQU $0A2A
 
 
-TOTAL_NUMBER_OF_ASTEROIDS  EQU 6     ; self explanatory, but max of 8 allowed with current memory "allocation"
+TOTAL_NUMBER_OF_ASTEROIDS  EQU 4     ; self explanatory, but max of 8 allowed with current memory "allocation"
 VSYNCLOOP                  EQU 1     ; this essentially controls how fast the game runs, the lower the number (down to 1 min) the faster it is
 LEVEL_COUNT_DOWN_INIT      EQU 3    ; this is how fast the asteroids come down the screen, higher number the slower they move
 
@@ -1356,7 +1356,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_5,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_1,_DT,_0,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_1,_DT,_1,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 
